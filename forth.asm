@@ -11,8 +11,14 @@ _start:				;tell linker the entry point
 	jmp	NEXT    	;go!
 
 NEXT:
-	mov	eax,[esi]	;*esi into eax
-	add	esi,0x4		;inc address by 4 due to 32bit
+	mov	eax,[esi]	;*fPC into eax
+	add	esi,0x4		;inc address by 8 due to 32bit
+	cmp 	DWORD[esi],0
+	je	N_J
+	;composite word
+	mov 	ebx,[eax]
+	mov 	eax, ebx
+N_J:	add 	esi,0x4	
 	jmp	eax
 
 DOTESS:
@@ -53,10 +59,8 @@ DOT:
 	add 	esp, 8		;restore stack?! shouldn't be -ve?
 	jmp	NEXT
 
-DUP:				;could just mov & push
-	pop	eax		;pop stack[-1] and save in eax
-	push	eax		;push it back on top
-	push	eax		;add another copy
+DUP:
+	push 	DWORD [esp]
 	jmp	NEXT
 
 STAR:
@@ -74,6 +78,55 @@ FIVE:
 	push	0x5
 	jmp	NEXT
 
+
+;MATH ops
+; CROSS:
+; DASH:
+; STAR:
+; SLASH:
+; PERCENT:
+
+;STACK ops
+; DUP: ;( a -- a a )
+; SWAP: ;( a b -- b a )
+; DROP: ;( a -- )
+; OVER: ;( a b -- a b a )
+; ROT: ;( a b c -- b c a )
+
+;FLOW control
+; IF:
+; ELSE:
+; THEN:
+; BEGIN: ;( -- )
+; WHILE: ;( b -- _)
+; REPEAT: ;( -- )
+; DO: ;( j i -- )
+; LOOP: ;( -- )
+; +LOOP: ;( n -- )
+
+;COMPARE ops
+; LESS: ;( a b -- f )
+; LEQ: ;( a b -- f )
+; EQ: ;( a b -- f )
+; GREATER: ;( a b -- f )
+; GEQ: ;( a b -- f )
+
+;HELPERS
+; COLON: ;starts new word definition
+; WORDS: ;( -- ) prints list of all words in system
+; SEE: ;( "word" -- ) prints definition of given word
+
+;INTERPRETER
+; BL: ;( -- 32 ) pushes a "BLank" char (null token)
+; CHAR: ;( "c" -- char ) push value of char to input stream
+; FIND: ;( str -- str 0 | xt 1 | xt -1 ); search for word <str>
+	;if not found, leave str on stack, push 0
+	;if found, replace <str> w exec token
+		;if immediate push 1
+		;else push -1
+; WORD: ;( ch "token" -- str ) consume stream to <ch>
+	; and push pointer to this token
+
 BYE:	
 	mov	eax,1                               ;system call number (sys_exit)
 	int	0x80                                ;call kernel
@@ -84,10 +137,11 @@ ENTER:
 	mov 	[eax], esi	;save prog counter's address
 	add 	DWORD [STACK_P],0x4		;inc stack pointer
 	;
-	sub 	esi, 0x4	;go to previous PC location
+	sub 	esi, 0x8	;go to previous PC location
 	mov 	ecx, [esi] 	;deref PC into sub-fn
-	add 	ecx, 0x4 	;this is 1st inst, go to 2nd
-	mov 	esi, ecx 	;set PC to 2nd command in metafn
+	add 	ecx, 0x8 	;this is 1st inst, go to 2nd
+	mov 	esi, ecx
+	 	;set PC to 2nd command in metafn
 	jmp 	NEXT
 
 EXIT:
@@ -97,16 +151,19 @@ EXIT:
 	jmp 	NEXT
 	
 ; program map
-PROGRAM:
-	dd 	FIVE
-	dd 	SQUARE
-	dd 	DOTESS
-	dd 	BYE
+PROGRAM:;	NAME	FLAG 
+	dd 	FIVE,	0
+	dd 	SQUARE, 1
+	dd 	DUP,	0
+	dd 	DOTESS, 0
+	dd 	BYE,	0
 
 SQUARE:
-	dd 	ENTER
-	dd 	DUP, STAR, EXIT
+	dd 	ENTER,	0
+	dd 	DUP, 0, STAR, 0, EXIT, 0
 
+DICTIONARY:
+	dd 	SQUARE,	1
 
 ;vars called above have to be in .data!! otherwise no access!
 section     .data
