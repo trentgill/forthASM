@@ -5,8 +5,9 @@ extern 	printf			;include C printf function
 global      _start		;must be declared for linker (ld)
 
 _start:				;tell linker the entry point
-	mov 	[SP0],esp 	;store stack pointer in SPO
+	mov 	[SP0],esp 	;store stack pointer in SP0
 	mov	esi,PROGRAM	;set the fPC
+	mov 	DWORD [STACK_P], RSTACK 
 	jmp	NEXT    	;go!
 
 NEXT:
@@ -46,14 +47,13 @@ DS_ENDR:push	ds_end		;end printf message (\n\r)
 	add 	esp, 4		;remove msg from stack pointer
 	jmp	NEXT
 
-
 DOT:
 	push	message
 	call 	printf
 	add 	esp, 8		;restore stack?! shouldn't be -ve?
 	jmp	NEXT
 
-DUP:
+DUP:				;could just mov & push
 	pop	eax		;pop stack[-1] and save in eax
 	push	eax		;push it back on top
 	push	eax		;add another copy
@@ -78,27 +78,47 @@ BYE:
 	mov	eax,1                               ;system call number (sys_exit)
 	int	0x80                                ;call kernel
 
+ENTER:
+	;push
+	mov 	eax, [STACK_P] 	;deref TOS into eax
+	mov 	[eax], esi	;save prog counter's address
+	add 	DWORD [STACK_P],0x4		;inc stack pointer
+	;
+	sub 	esi, 0x4	;go to previous PC location
+	mov 	ecx, [esi] 	;deref PC into sub-fn
+	add 	ecx, 0x4 	;this is 1st inst, go to 2nd
+	mov 	esi, ecx 	;set PC to 2nd command in metafn
+	jmp 	NEXT
+
+EXIT:
+	sub 	DWORD [STACK_P], 0x4
+	mov 	eax, [STACK_P]	; ??? double*?
+	mov 	esi, [eax]
+	jmp 	NEXT
+	
 ; program map
 PROGRAM:
-	dd 	SEVEN
 	dd 	FIVE
-	dd 	STAR
-	dd 	SEVEN
+	dd 	SQUARE
 	dd 	DOTESS
-	dd 	DOT
-	dd 	DOTESS
-	; dd 	HWORLD
 	dd 	BYE
+
+SQUARE:
+	dd 	ENTER
+	dd 	DUP, STAR, EXIT
+
 
 ;vars called above have to be in .data!! otherwise no access!
 section     .data
 
-SP0	dd 	0x0
+SP0	dd 	0x0 			;var to hold stack base pointer
+
+RSTACK TIMES 0xF dd 0x0
+STACK_P dd 	0x0
 
 ds_sz 	db  '<0x%x> ',0x0 		;no new line!
 ds_num 	db  '0x%x ',0x0 		;print a hex num
 ds_end 	db  'nice stack ;)',0xA,0x0 	;close printf statement
 
 message	db  'the number: 0x%x', 0xA, 0x0
-msg     db  'Hello, world!',0xA 	;our dear string
-len     equ $ - msg 			;length of our dear string
+;len     equ $ - msg 			;length of our dear string
