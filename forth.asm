@@ -8,7 +8,13 @@ _start:				;tell linker the entry point
 	mov 	[SP0],esp 	;store stack pointer in SP0
 	mov	esi,PROGRAM	;set the fPC
 	mov 	DWORD [STACK_P], RSTACK 
+;insert INIT_D in here 	
 	jmp	NEXT    	;go!
+
+INIT_D:
+
+
+
 
 NEXT:
 	mov	eax,[esi]	;*fPC into eax
@@ -131,6 +137,31 @@ BYE:
 	mov	eax,1                               ;system call number (sys_exit)
 	int	0x80                                ;call kernel
 
+NEXT:
+	mov	eax,[esi]	;*fPC into eax
+	add	esi,0x4		;inc address by 8 due to 32bit
+	cmp 	DWORD[esi],0
+	je	N_J
+	;composite word
+	mov 	ebx,[eax]
+	mov 	eax, ebx
+N_J:	add 	esi,0x4	
+	jmp	eax
+
+JUMP:
+	sub 	esi, 0x4	;go to previous PC (this call!)
+	mov 	ecx, [esi] 	;deref PC into sub-fn
+	add 	ecx, 0x8 	;this is 1st inst, go to 2nd
+	mov 	esi, ecx
+
+	mov	eax,[esi]	;*fPC into eax
+	add	esi,0x4		;inc address by 8 due to 32bit
+	cmp 	DWORD[esi],0
+	add 	esi,0x4	
+	jmp	eax
+
+
+
 ENTER:
 	;push
 	mov 	eax, [STACK_P] 	;deref TOS into eax
@@ -151,19 +182,38 @@ EXIT:
 	jmp 	NEXT
 	
 ; program map
-PROGRAM:;	NAME	FLAG 
-	dd 	FIVE,	0
-	dd 	SQUARE, 1
-	dd 	DUP,	0
-	dd 	DOTESS, 0
-	dd 	BYE,	0
+PROGRAM:;
+	;dd 	ENTER
+	dd 	FIVE, SQUARE, DUP, DOTESS, BYE
 
 SQUARE:
 	dd 	ENTER,	0
 	dd 	DUP, 0, STAR, 0, EXIT, 0
 
+
+;"name", address, flag(JUMP/ENTER), next-entry
 DICTIONARY:
-	dd 	SQUARE,	1
+	;native words
+	dd 	'NEXT'	,JUMP,NEXT 	,dict[1]
+	dd 	'.S'	,JUMP,DOTESS	,?
+	dd 	'.' 	,JUMP,DOT 	,
+	dd 	'DUP'	,JUMP,DUP 	,
+	dd 	'*' 	,JUMP,STAR 	,
+	dd 	'7'	,JUMP,SEVEN	,
+	dd 	'5'	,JUMP,FIVE 	,
+	dd 	'BYE'	,JUMP,BYE 	,
+	dd 	'ENTER'	,JUMP,ENTER 	,
+	dd 	'EXIT'	,JUMP,EXIT 	,0x0
+	;composite words (only for eg)
+	dd 	'SQUARE',ENTER,DUP,STAR,EXIT 	,0x0
+
+;rather than having a flag at each address
+;the dict just has an index which says "last imm. word"
+;if 
+;NOPE: this can't work bc the composite words are 
+;a linked list and thus not related to any absolute ix
+
+
 
 ;vars called above have to be in .data!! otherwise no access!
 section     .data

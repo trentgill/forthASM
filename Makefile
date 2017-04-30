@@ -1,7 +1,7 @@
 all: forth
 
-forth.o: forth.asm
-	nasm -f elf $<
+forth.o: forth2.asm
+	nasm -f elf $< -o $@
 
 # LIBS=/usr/lib/gcc/x86_64-linux-gnu/5
 
@@ -12,4 +12,4 @@ LDFLAGS+= -m elf_i386
 # LDFLAGS+= --verbose
 
 forth: forth.o Makefile
-	ld $(LDFLAGS) -s -o $@ $<
+	ld $(LDFLAGS) -o $@ $<
