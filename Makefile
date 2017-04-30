@@ -11,5 +11,11 @@ LDFLAGS+= -lc
 LDFLAGS+= -m elf_i386
 # LDFLAGS+= --verbose
 
-forth: forth.o Makefile
-	ld $(LDFLAGS) -o $@ $<
+%.o: %.c
+	gcc -c -m32 -o $@ $<
+
+forth: forth.o interpret.o
+	ld $(LDFLAGS) -o $@ $^
+
+clean:
+	rm -f *.o forth
