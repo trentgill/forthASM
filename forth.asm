@@ -146,7 +146,7 @@ ENTER:
 
 EXIT:
 	sub 	DWORD [STACK_P], 0x4
-	mov 	eax, [STACK_P]	; ??? double*?
+	mov 	eax, [STACK_P]
 	mov 	esi, [eax]
 	jmp 	NEXT
 	
