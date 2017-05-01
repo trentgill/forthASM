@@ -1,12 +1,18 @@
 section     .text
 
 extern 	printf			;include C printf function
-extern	c_interpret
+extern	c_WORD
+extern 	c_FIND
+extern 	atoi
 
 global	_start		;must be declared for linker (ld)
 global 	LATEST
+
 ;constant register allocations
-;;;;;
+
+; esp:	TOS pointer
+; esi: 	forth program counter
+; ebp: 	return stack pointer
 
 _start:				;tell linker the entry point
 	mov 	[SP0],esp 	;store stack pointer in SP0
@@ -28,21 +34,22 @@ DOCOLON:
 	jmp	NEXT
 
 QUIT:
-	mov 	ebp, RSTACK
-L1:	call	c_interpret
-	jmp 	L1		;infinite loop
-
+	mov 	ebp, RSTACK	;clear return stack
+	mov 	DWORD[in_str_os], 0 	;reset in_str offset
+	jmp 	[INTERPRET]	;run INTERPRET
 
 PROGRAM dd 	QUIT
 
 ;DICTIONARY
+align 	16, db 0
 hFIVE	dd 	0
 	db	"5"
 	align 	16, db 0
-FIVE 	dd 	cFIVE
-cFIVE: 	push 	0x5
-	jmp	NEXT
+	FIVE 	dd 	cFIVE
+	cFIVE: 	push 	0x5
+		jmp	NEXT
 
+align 	16, db 0
 hDUP 	dd 	hFIVE
 	db 	"DUP"
 	align	16, db 0
@@ -50,6 +57,7 @@ hDUP 	dd 	hFIVE
 	cDUP: 	push	DWORD [esp]
 		jmp	NEXT
 
+align 	16, db 0
 hSTAR	dd 	hDUP
 	db 	"*"
 	align 	16, db 0
@@ -60,6 +68,7 @@ hSTAR	dd 	hDUP
 		push 	eax
 		jmp 	NEXT
 
+align 	16, db 0
 hEXIT 	dd 	hSTAR
 	db 	"EXIT"
 	align	16, db 0	
@@ -68,7 +77,102 @@ hEXIT 	dd 	hSTAR
 		mov 	esi, [ebp]
 		jmp 	NEXT
 
-hBYE 	dd 	hEXIT
+align 	16, db 0
+hINTERPRET dd 	hEXIT
+	db 	"INTERPRET"
+	align	16, db 0
+	INTERPRET dd 	DOCOLON
+		dd 	ZERO, WERD, FIND
+		dd 	QBRANCH, 0x8, EXECUTE
+		dd 	BRANCH, 0x8, TONUM
+		dd 	EXIT
+
+align 	16, db 0
+hQBRANCH dd 	hINTERPRET
+	db 	"QBRANCH"
+	align	16, db 0
+	QBRANCH dd 	hBRANCH
+	cQBRANCH:
+		cmp	DWORD[esp],0 	;is TOS = 0?
+		jne	Q_NOTZ		;GOTO !0 branch
+		;skip
+		add 	esi, [esi]	;move fPC forward by contents of fPC (QB's arg)
+		jmp 	NEXT
+		;IF = TRUE
+	Q_NOTZ:	add 	esi, 0x4 	;skip QB's arg
+		jmp 	NEXT
+
+align 	16, db 0
+hBRANCH dd 	hQBRANCH
+	db 	"BRANCH"
+	align	16, db 0
+	BRANCH dd 	cBRANCH
+	cBRANCH:
+		pop 	eax		;rm FLAG from stack
+		cmp	eax,0 		;is TOS = 0?
+		je	B_ISZ		;GOTO !0 branch
+		add 	esi, [esi]	;move fPC forward by contents of fPC (B's arg)
+		jmp 	NEXT
+	B_ISZ:	add 	esi, 0x4 	;skip B's arg
+		jmp 	NEXT
+
+align 	16, db 0
+hZERO	dd 	hBRANCH
+	db	"BL"
+	align 	16, db 0
+	ZERO 	dd 	cZERO
+	cZERO: 	push	0x20 		;push SPACE
+		jmp	NEXT
+
+align 	16, db 0
+hWERD	dd 	hZERO
+	db	"WORD"
+	align 	16, db 0
+	WERD 	dd 	cWERD
+	cWERD: 	push	DWORD[in_str_os];string offset (already read)
+		push 	in_str 		;address of input string
+		push 	word_str	;address of output return str
+		call 	c_WORD 		;ret length of WORD
+		add 	esp, 0x8 	;drop 2 vals
+		pop 	DWORD[in_str_os];update offset
+			; leaves *token(as string) on stack
+		jmp	NEXT
+
+align 	16, db 0
+hFIND	dd 	hWERD
+	db	"FIND"
+	align 	16, db 0
+	FIND 	dd 	cFIND
+	cFIND: 			;str is on stack
+				;match str to dict word
+				;push a -1/0/+1 depending on if found
+		call 	c_FIND
+		sub 	esp, 0x4;c_FIND returns pushes 1 val
+		jmp	NEXT
+
+align 	16, db 0
+hEXECUTE dd 	hFIND
+	db	"EXECUTE"
+	align 	16, db 0
+	EXECUTE dd 	cEXECUTE
+	cEXECUTE:
+		pop 	eax		;pop FLAG into eax
+		pop 	ebx		;pop XT into eax
+		cmp	eax, 1
+		je	X_IMM 		;if flag=1 DO IT NOW		
+		jmp	[ebx]		;NON-IMMEDIATE
+	X_IMM:	jmp	[ebx]		;IMMEDIATE
+
+align 	16, db 0
+hTONUM	dd 	hEXECUTE
+	db	"TONUM"
+	align 	16, db 0
+	TONUM 	dd 	cTONUM
+	cTONUM: call 	atoi		;c lib func char->int
+		jmp	NEXT
+
+align 	16, db 0
+hBYE 	dd 	hTONUM
 	db 	"BYE"
 	align	16, db 0
 	BYE	dd 	cBYE
@@ -76,17 +180,25 @@ hBYE 	dd 	hEXIT
 		pop 	ebx
 		int 	0x80
 
+align 	16, db 0
 hSQUARED dd 	hBYE
 	db 	"SQUARED"
 	align	16, db 0
-	SQUARED dd 	DOCOLON, DUP, STAR, EXIT
+	SQUARED dd 	DOCOLON
+		dd	DUP, STAR, EXIT
 
-"5 DUP * BYE ;"
-: SQUARED ( a -- a^2 ) DUP * ;
+
+
+
+; : SQUARED ( a -- a^2 ) DUP * ;
 
 section	.data
 
-SP0 dd 0
-RSTACK TIMES 0x10 dd 0x0
+SP0 dd 0 		;pointer to bottom of stack
+RSTACK TIMES 0x10 dd 0x0;return stack init
 
-LATEST dd hSQUARED ;*dd in header of last created
+LATEST dd hSQUARED 	;pointer to header of last word added to dict
+
+in_str db "5 DUP * BYE ;",0 ;fake shell input string
+in_str_os db 0 		;save how many chars have been used
+word_str TIMES 0x10 db 0
