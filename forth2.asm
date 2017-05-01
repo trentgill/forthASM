@@ -16,27 +16,30 @@ global 	LATEST
 
 _start:				;tell linker the entry point
 	mov 	[SP0],esp 	;store stack pointer in SP0
-	mov	esi,PROGRAM	;set the fPC
+	mov	esi, PROGRAM	;set the fPC
 	mov 	ebp, RSTACK
 	jmp	NEXT    	;go!
 
 ;"code fragments"
 NEXT:
-	mov 	eax, [esi]
-	add 	esi, 0x4
-	jmp 	[eax]
-
-DOCOLON:
-	mov 	[ebp], esi
-	add 	ebp, 0x4
-	mov 	esi, eax
-	add 	esi, 0x4
-	jmp	NEXT
+	mov 	eax, esi	;save fPC in eax
+	add 	esi, 0x4 	;increment fPC
+	jmp 	[eax] 		;go to *fPC
 
 QUIT:
 	mov 	ebp, RSTACK	;clear return stack
 	mov 	DWORD[in_str_os], 0 	;reset in_str offset
-	jmp 	[INTERPRET]	;run INTERPRET
+	mov 	esi, INTERPRET 	;set fPC to INTERPRET
+	jmp 	NEXT		;run INTERPRET
+
+DOCOLON:
+	mov 	[ebp], esi	;push fPC onto rtn stack
+	add 	ebp, 0x4	;"
+				;eax=prev fPC
+	mov 	esi, eax	;resolve last fPC into fPC
+	add 	esi, 0x4	;move 1 word forward
+	jmp	NEXT
+
 
 PROGRAM dd 	QUIT
 
@@ -49,8 +52,18 @@ hFIVE	dd 	0
 	cFIVE: 	push 	0x5
 		jmp	NEXT
 
+align	16, db 0
+hDOT	dd 	hFIVE
+	db 	"."
+	align 	16, db 0
+	DOT 	dd 	cDOT
+	cDOT:	push 	message
+		call 	printf
+		add 	esp, 8
+		jmp 	NEXT
+
 align 	16, db 0
-hDUP 	dd 	hFIVE
+hDUP 	dd 	hDOT
 	db 	"DUP"
 	align	16, db 0
 	DUP 	dd 	cDUP
@@ -137,6 +150,10 @@ hWERD	dd 	hZERO
 		pop 	DWORD[in_str_os];update offset
 			; leaves *token(as string) on stack
 		jmp	NEXT
+		; passes test (for first word)
+		; drops top 2 vals on stack
+		; pushes count-of-used chars into in_str_os var
+		; leaves *word_str on stack
 
 align 	16, db 0
 hFIND	dd 	hWERD
@@ -146,8 +163,26 @@ hFIND	dd 	hWERD
 	cFIND: 			;str is on stack
 				;match str to dict word
 				;push a -1/0/+1 depending on if found
+		; what's on top of stack?
+			push 	DWORD[esp]
+			push 	debugDD
+			call 	printf
+			add 	esp, 8
+
 		call 	c_FIND
-		sub 	esp, 0x4;c_FIND returns pushes 1 val
+		; what's on top of stack?
+			push 	DWORD[esp]
+			push 	debugDD
+			call 	printf
+			add 	esp, 8
+		sub 	esp, 0x4;c_FIND pushes 1 val
+		; what's on top of stack?
+			push 	DWORD[esp]
+			push 	debugDD
+			call 	printf
+			add 	esp, 8
+
+
 		jmp	NEXT
 
 align 	16, db 0
@@ -199,6 +234,10 @@ RSTACK TIMES 0x10 dd 0x0;return stack init
 
 LATEST dd hSQUARED 	;pointer to header of last word added to dict
 
-in_str db "5 DUP * BYE ;",0 ;fake shell input string
-in_str_os db 0 		;save how many chars have been used
+in_str db "5 DUP * . BYE ;",0 ;fake shell input string
+in_str_os dd 0 		;save how many chars have been used
 word_str TIMES 0x10 db 0
+
+message	db  'the number: 0x%x', 0xA, 0x0
+debugP db 'asm_p: %p',0xA,0x0
+debugDD db 'asm_dd: 0x%x',0xA,0x0
