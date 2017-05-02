@@ -37,16 +37,18 @@ void c_WORD( char* out, char* in, int in_offset, int delim )
 	return;
 }
 
-void c_FIND( char* key )
+void c_FIND( int* TOS, char* key )
 {
 	struct word_header* here = LATEST; // searching loc'n
-	int* token = (int *)&key; // void* ??
-	int* flag = (int *)&token - 0x4; // 1 address higher on stack
+	// int* token = (int *)&key; // void* ??
+	// int* flag = (int *)&token - 0x4; // 1 address higher on stack
 
+	// int* token = *TOS;
+	// int* flag = *TOS - 4;
 	// printf("&key  =%p\n\r", &key ); // pointer to TOS
 	// printf("&here =%p\n\r", &here);
-	// printf("&token=%p\n\r", &token); // dynamically allocated mem
-
+	// printf("token=%p\n\r", token); // dynamically allocated mem
+	// printf("flag =%p\n\r", flag);
 	// printf("C: in_offset=%x\n\r", in_offset);
 	// printf("C: &in_offset=%p\n\r",&in_offset);	
 	printf("\n\rFIND\n\r");
@@ -54,17 +56,19 @@ void c_FIND( char* key )
 	do{
 		if(strcmp( here->name, key ) == 0){
 			// MATCH
-			*token = (int)here->codefield; // ptr to token
-			*flag = 1; // -1 if immediate word!!
+			// *token = (int **)here->codefield; // ptr to token
+			// *token = 0x13;
+			// *flag = 1; // -1 if immediate word!!
 			printf("FOUND!\n\r");
 			// *key = 32;
+			// key = 32;
 			return;
 		}
 		here = here->prev; // go to prev word in DICT
 	} while(here != NULL);
 
 	printf("\n\rMUST BE A NUMBER\n\r");
-	*flag = 0; // no match
+	// *flag = 0; // no match
 
 	return;
 }

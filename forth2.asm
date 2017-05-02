@@ -1,8 +1,8 @@
 section     .text
 
 extern 	printf			;include C printf function
-extern	c_WORD
-extern 	c_FIND
+; extern	c_WORD
+; extern 	c_FIND
 extern 	atoi
 
 global	_start		;must be declared for linker (ld)
@@ -29,8 +29,8 @@ NEXT:
 QUIT:
 	mov 	ebp, RSTACK	;clear return stack
 	mov 	DWORD[in_str_os], 0 	;reset in_str offset
-	mov 	esi, INTERPRET 	;set fPC to INTERPRET
-	jmp 	NEXT		;run INTERPRET
+	mov 	esi, INTERP 	;set fPC to INTERP
+	jmp 	NEXT		;run INTERP
 
 DOCOLON:
 	mov 	[ebp], esi	;push fPC onto rtn stack
@@ -39,7 +39,6 @@ DOCOLON:
 	mov 	esi, eax	;resolve last fPC into fPC
 	add 	esi, 0x4	;move 1 word forward
 	jmp	NEXT
-
 
 PROGRAM dd 	QUIT
 
@@ -91,17 +90,15 @@ hEXIT 	dd 	hSTAR
 		jmp 	NEXT
 
 align 	16, db 0
-hINTERPRET dd 	hEXIT
-	db 	"INTERPRET"
-	align	16, db 0
-	INTERPRET dd 	DOCOLON
-		dd 	ZERO, WERD, FIND
-		dd 	QBRANCH, 0x8, EXECUTE
-		dd 	BRANCH, 0x8, TONUM
-		dd 	EXIT
+hZERO	dd 	hEXIT
+	db	"BL"
+	align 	16, db 0
+	ZERO 	dd 	cZERO
+	cZERO: 	push	DWORD 0x20	;push SPACE
+		jmp	NEXT
 
 align 	16, db 0
-hQBRANCH dd 	hINTERPRET
+hQBRANCH dd 	hZERO
 	db 	"QBRANCH"
 	align	16, db 0
 	QBRANCH dd 	hBRANCH
@@ -129,23 +126,16 @@ hBRANCH dd 	hQBRANCH
 	B_ISZ:	add 	esi, 0x4 	;skip B's arg
 		jmp 	NEXT
 
-align 	16, db 0
-hZERO	dd 	hBRANCH
-	db	"BL"
-	align 	16, db 0
-	ZERO 	dd 	cZERO
-	cZERO: 	push	0x20 		;push SPACE
-		jmp	NEXT
-
-align 	16, db 0
-hWERD	dd 	hZERO
+; align 	16, db 0
+hWERD	dd 	hBRANCH
 	db	"WORD"
 	align 	16, db 0
 	WERD 	dd 	cWERD
-	cWERD: 	push	DWORD[in_str_os];string offset (already read)
+	cWERD: 	
+		push	DWORD[in_str_os];string offset (already read)
 		push 	in_str 		;address of input string
 		push 	word_str	;address of output return str
-		call 	c_WORD 		;ret length of WORD
+		; call 	c_WORD 		;ret length of WORD
 		add 	esp, 0x8 	;drop 2 vals
 		pop 	DWORD[in_str_os];update offset
 			; leaves *token(as string) on stack
@@ -155,34 +145,28 @@ hWERD	dd 	hZERO
 		; pushes count-of-used chars into in_str_os var
 		; leaves *word_str on stack
 
-align 	16, db 0
-hFIND	dd 	hWERD
+; align 	16, db 0
+hINTERP dd 	hWERD
+	db 	"INTERP"
+	align	16, db 0
+	INTERP 	dd 	DOCOLON
+		dd 	ZERO, WERD, FIND
+		dd 	QBRANCH, 0x8, EXECUTE
+		dd 	BRANCH, 0x8, TONUM
+		dd 	EXIT
+
+
+; align 	16, db 0
+hFIND	dd 	hINTERP
 	db	"FIND"
 	align 	16, db 0
 	FIND 	dd 	cFIND
 	cFIND: 			;str is on stack
 				;match str to dict word
 				;push a -1/0/+1 depending on if found
-		; what's on top of stack?
-			push 	DWORD[esp]
-			push 	debugDD
-			call 	printf
-			add 	esp, 8
-
-		call 	c_FIND
-		; what's on top of stack?
-			push 	DWORD[esp]
-			push 	debugDD
-			call 	printf
-			add 	esp, 8
+		push 	esp
+		; call 	c_FIND
 		sub 	esp, 0x4;c_FIND pushes 1 val
-		; what's on top of stack?
-			push 	DWORD[esp]
-			push 	debugDD
-			call 	printf
-			add 	esp, 8
-
-
 		jmp	NEXT
 
 align 	16, db 0
@@ -222,22 +206,25 @@ hSQUARED dd 	hBYE
 	SQUARED dd 	DOCOLON
 		dd	DUP, STAR, EXIT
 
-
-
+; align 16, db 0
 
 ; : SQUARED ( a -- a^2 ) DUP * ;
 
 section	.data
 
-SP0 dd 0 		;pointer to bottom of stack
-RSTACK TIMES 0x10 dd 0x0;return stack init
+SP0 	dd 0 		;pointer to bottom of stack
+RSTACK  TIMES 0x10 dd 0x0;return stack init
 
-LATEST dd hSQUARED 	;pointer to header of last word added to dict
+LATEST  dd hSQUARED 	;pointer to header of last word added to dict
 
-in_str db "5 DUP * . BYE ;",0 ;fake shell input string
+in_str  db "5 DUP * . BYE ;",0 ;fake shell input string
 in_str_os dd 0 		;save how many chars have been used
 word_str TIMES 0x10 db 0
 
 message	db  'the number: 0x%x', 0xA, 0x0
-debugP db 'asm_p: %p',0xA,0x0
-debugDD db 'asm_dd: 0x%x',0xA,0x0
+debugP 	db  'asm_p: %p',0xA,0x0
+debugDD db  'asm_dd: 0x%x',0xA,0x0
+
+ds_sz 	db  '<0x%x> ',0x0 		;no new line!
+ds_num 	db  '0x%x ',0x0 		;print a hex num
+ds_end 	db  'nice stack ;)',0xA,0x0 	;close printf statement
