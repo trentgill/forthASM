@@ -15,7 +15,7 @@ global 	LATEST
 ; ebp: 	return stack pointer
 
 _start:				;tell linker the entry point
-	mov 	[SP0],esp 	;store stack pointer in SP0
+	; mov 	[SP0],esp 	;store stack pointer in SP0
 	mov	esi, PROGRAM	;set the fPC
 	mov 	ebp, RSTACK
 	jmp	NEXT    	;go!
@@ -40,7 +40,6 @@ DOCOLON:
 	add 	esi, 0x4	;move 1 word forward
 	jmp	NEXT
 
-PROGRAM dd 	QUIT
 
 ;DICTIONARY
 align 	16, db 0
@@ -126,13 +125,13 @@ hBRANCH dd 	hQBRANCH
 	B_ISZ:	add 	esi, 0x4 	;skip B's arg
 		jmp 	NEXT
 
-; align 	16, db 0
+align 	16, db 0
 hWERD	dd 	hBRANCH
 	db	"WORD"
 	align 	16, db 0
 	WERD 	dd 	cWERD
 	cWERD: 	
-		push	DWORD[in_str_os];string offset (already read)
+		; push	DWORD[in_str_os];string offset (already read)
 		push 	in_str 		;address of input string
 		push 	word_str	;address of output return str
 		; call 	c_WORD 		;ret length of WORD
@@ -145,7 +144,7 @@ hWERD	dd 	hBRANCH
 		; pushes count-of-used chars into in_str_os var
 		; leaves *word_str on stack
 
-; align 	16, db 0
+align 	16, db 0
 hINTERP dd 	hWERD
 	db 	"INTERP"
 	align	16, db 0
@@ -212,6 +211,10 @@ hSQUARED dd 	hBYE
 
 section	.data
 
+PROGRAM dd 	QUIT
+
+
+
 SP0 	dd 0 		;pointer to bottom of stack
 RSTACK  TIMES 0x10 dd 0x0;return stack init
 
@@ -225,6 +228,6 @@ message	db  'the number: 0x%x', 0xA, 0x0
 debugP 	db  'asm_p: %p',0xA,0x0
 debugDD db  'asm_dd: 0x%x',0xA,0x0
 
-ds_sz 	db  '<0x%x> ',0x0 		;no new line!
-ds_num 	db  '0x%x ',0x0 		;print a hex num
-ds_end 	db  'nice stack ;)',0xA,0x0 	;close printf statement
+; ds_sz 	db  '<0x%x> ',0x0 		;no new line!
+; ds_num 	db  '0x%x ',0x0 		;print a hex num
+; ds_end 	db  'nice stack ;)',0xA,0x0 	;close printf statement

@@ -4,7 +4,7 @@
 
 struct word_header{
 	struct word_header* prev;
-	char name[16];
+	char name[12];
 	void* codefield;
 };
 
@@ -13,7 +13,7 @@ extern struct word_header* LATEST;
 // input_buffer[] = "5 DUP * DOT BYE ;"
 void c_WORD( char* out, char* in, int in_offset, int delim )
 {
-	char* out_ptr = out; // save ptr to return token
+/*	char* out_ptr = out; // save ptr to return token
 	
 	in += in_offset; // shift in_ptr to next word
 	int count = in_offset;
@@ -34,12 +34,12 @@ void c_WORD( char* out, char* in, int in_offset, int delim )
 	*out_offset = count;
 	*out_str = out_ptr;
 
-	return;
+	return;*/
 }
 
 void c_FIND( int* TOS, char* key )
 {
-	struct word_header* here = LATEST; // searching loc'n
+/*	struct word_header* here = LATEST; // searching loc'n
 	// int* token = (int *)&key; // void* ??
 	// int* flag = (int *)&token - 0x4; // 1 address higher on stack
 
@@ -70,5 +70,5 @@ void c_FIND( int* TOS, char* key )
 	printf("\n\rMUST BE A NUMBER\n\r");
 	// *flag = 0; // no match
 
-	return;
+	return;*/
 }
