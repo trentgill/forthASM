@@ -163,26 +163,20 @@ hFIND	dd 	hWERD
 	cFIND: 			;str is on stack
 				;match str to dict word
 				;push a -1/0/+1 depending on if found
-		; what's on top of stack?
-			push 	DWORD[esp]
-			push 	debugDD
-			call 	printf
-			add 	esp, 8
-
+		push 	esp	;push &TOS to c_FIND
 		call 	c_FIND
+		add 	esp, 0x4;c_FIND pushes 1 val
 		; what's on top of stack?
 			push 	DWORD[esp]
 			push 	debugDD
 			call 	printf
 			add 	esp, 8
-		sub 	esp, 0x4;c_FIND pushes 1 val
+		add 	esp, 0x4;c_FIND pushes 1 val
 		; what's on top of stack?
 			push 	DWORD[esp]
 			push 	debugDD
 			call 	printf
 			add 	esp, 8
-
-
 		jmp	NEXT
 
 align 	16, db 0

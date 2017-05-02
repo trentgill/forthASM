@@ -5,7 +5,7 @@
 struct word_header{
 	struct word_header* prev;
 	char name[16];
-	void* codefield;
+	int* codefield; // should be void* really :s
 };
 
 extern struct word_header* LATEST;
@@ -37,34 +37,26 @@ void c_WORD( char* out, char* in, int in_offset, int delim )
 	return;
 }
 
-void c_FIND( char* key )
+void c_FIND( int* topOfStack, char* key )
 {
 	struct word_header* here = LATEST; // searching loc'n
 	int* token = (int *)&key; // void* ??
 	int* flag = (int *)&token - 0x4; // 1 address higher on stack
 
-	// printf("&key  =%p\n\r", &key ); // pointer to TOS
-	// printf("&here =%p\n\r", &here);
-	// printf("&token=%p\n\r", &token); // dynamically allocated mem
-
-	// printf("C: in_offset=%x\n\r", in_offset);
-	// printf("C: &in_offset=%p\n\r",&in_offset);	
-	printf("\n\rFIND\n\r");
+	int* TOS = topOfStack;
+	int* TOS_next = topOfStack - 0x4;
 
 	do{
 		if(strcmp( here->name, key ) == 0){
-			// MATCH
-			*token = (int)here->codefield; // ptr to token
-			*flag = 1; // -1 if immediate word!!
 			printf("FOUND!\n\r");
-			// *key = 32;
+			*TOS = (int)&(here->codefield);
+			*TOS_next = 1; // SET FLAG TO 1 (EXECUTE)
 			return;
 		}
 		here = here->prev; // go to prev word in DICT
 	} while(here != NULL);
 
 	printf("\n\rMUST BE A NUMBER\n\r");
-	*flag = 0; // no match
-
+	*TOS_next = 0; // SET FLAG TO 0 (>NUM)
 	return;
 }
