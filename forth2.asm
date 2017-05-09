@@ -165,18 +165,7 @@ hFIND	dd 	hWERD
 				;push a -1/0/+1 depending on if found
 		push 	esp	;push &TOS to c_FIND
 		call 	c_FIND
-		add 	esp, 0x4;c_FIND pushes 1 val
-		; what's on top of stack?
-			push 	DWORD[esp]
-			push 	debugDD
-			call 	printf
-			add 	esp, 8
-		add 	esp, 0x4;c_FIND pushes 1 val
-		; what's on top of stack?
-			push 	DWORD[esp]
-			push 	debugDD
-			call 	printf
-			add 	esp, 8
+		sub 	esp, 	0x4 	;c_FIND pushed a val
 		jmp	NEXT
 
 align 	16, db 0
@@ -210,7 +199,46 @@ hBYE 	dd 	hTONUM
 		int 	0x80
 
 align 	16, db 0
-hSQUARED dd 	hBYE
+hDOTESS dd 	hBYE
+	db 	".S"
+	align 	16, db 0
+	DOTESS 	dd 	DOTESS
+	cDOTESS:
+			push 	debugDD
+			call 	printf
+			add 	esp, 4
+		
+		mov 	ebx, [SP0]
+		sub 	ebx, esp
+		mov 	ecx, ebx
+		sar 	ecx, 2
+		;print size
+		push 	ecx
+		push 	ds_sz
+		call 	printf
+		add 	esp, 8
+		;print contents
+	DS_ITER:jbe	DS_ENDR
+		mov 	ecx, esp
+		add 	ecx, ebx
+		sub 	ecx, 4
+		mov 	edx, [ecx]
+
+		push 	edx
+		push 	ds_num
+		call 	printf
+		add 	esp, 8
+		
+		sub 	ebx, 4
+		jmp 	DS_ITER
+		;print end of message
+	DS_ENDR:push 	ds_end
+		call 	printf
+		add 	esp, 4
+		jmp 	NEXT
+
+align 	16, db 0
+hSQUARED dd 	hDOTESS
 	db 	"SQUARED"
 	align	16, db 0
 	SQUARED dd 	DOCOLON
@@ -235,3 +263,7 @@ word_str TIMES 0x10 db 0
 message	db  'the number: 0x%x', 0xA, 0x0
 debugP db 'asm_p: %p',0xA,0x0
 debugDD db 'asm_dd: 0x%x',0xA,0x0
+
+ds_sz 	db  '<0x%x> ',0x0 		;no new line!
+ds_num 	db  '0x%x ',0x0 		;print a hex num
+ds_end 	db  'nice stack ;)',0xA,0x0 	;close printf statement
