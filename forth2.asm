@@ -104,7 +104,7 @@ align 	16, db 0
 hQBRANCH dd 	hINTERPRET
 	db 	"QBRANCH"
 	align	16, db 0
-	QBRANCH dd 	hBRANCH
+	QBRANCH dd 	cQBRANCH
 	cQBRANCH:
 		cmp	DWORD[esp],0 	;is TOS = 0?
 		jne	Q_NOTZ		;GOTO !0 branch
@@ -202,7 +202,7 @@ align 	16, db 0
 hDOTESS dd 	hBYE
 	db 	".S"
 	align 	16, db 0
-	DOTESS 	dd 	DOTESS
+	DOTESS 	dd 	cDOTESS
 	cDOTESS:
 			push 	debugDD
 			call 	printf
