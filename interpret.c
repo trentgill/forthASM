@@ -35,13 +35,13 @@ void c_WORD( char* out, char* in, int in_offset, int delim )
 	return;
 }
 
-void c_FIND( struct word_header* here, int* topOfStack, char* key )
+void c_FIND( void* r_stk, struct word_header* here, char* key )
 {
 	int* token = (int *)&key; // void* ??
 	int* flag = (int *)&token - 0x4; // 1 address higher on stack
 
-	int* TOS = topOfStack;
-	int* TOS_next = topOfStack - 0x4;
+	int* TOS = (int *)r_stk;
+	int* TOS_next = (int *)r_stk - 0x1; // C KNOWS THAT IT'S A 32BIT ADDRESS!
 
 	do{
 		if(strcmp( here->name, key ) == 0){
@@ -54,6 +54,7 @@ void c_FIND( struct word_header* here, int* topOfStack, char* key )
 	} while(here != NULL);
 
 	printf("\n\rMUST BE A NUMBER\n\r");
+	*TOS = (int)key;
 	*TOS_next = 0; // SET FLAG TO 0 (>NUM)
 	return;
 }

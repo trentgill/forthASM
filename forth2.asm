@@ -92,10 +92,10 @@ hINTERPRET dd 	hEXIT
 	db 	"INTERPRET"
 	align	16, db 0
 	INTERPRET dd 	DOCOLON
-		dd 	cZERO, cWERD, cFIND
+		dd 	cZERO, cWERD, cDOTESS, cFIND, cDOTESS
 		dd 	cQBRANCH, 0x8, cEXECUTE
-		dd 	cBRANCH, 0x8, cTONUM
-		dd 	cEXIT
+		dd 	cDOTESS, cBRANCH, 0x8, cTONUM
+		dd 	cDOTESS, cEXIT
 
 align 	16, db 0
 hQBRANCH dd 	hINTERPRET
@@ -160,10 +160,15 @@ hFIND	dd 	hWERD
 	cFIND: 			;str is on stack
 				;match str to dict word
 				;push a -1/0/+1 depending on if found
-		push 	esp	;push &TOS to c_FIND
+		; push 	esp	;push &TOS to c_FIND
 		push 	LATEST	;push &h_of_last_word_in_dict
+		add 	ebp, 0x4;add 1 extra space on rtn_stk
+		push 	ebp	;push &returnstack
 		call 	c_FIND
-		sub 	esp, 	0x4 	;c_FIND pushed a val
+		add 	esp, 0xC 	;c_FIND pushed a val
+		push 	DWORD[ebp]
+		sub 	ebp, 0x4
+		push 	DWORD[ebp]
 		jmp	NEXT
 
 align 	16, db 0
@@ -236,7 +241,7 @@ hSQUARED dd 	hDOTESS
 	db 	"SQUARED"
 	align	16, db 0
 	SQUARED dd 	DOCOLON
-		dd	DUP, STAR, EXIT
+		dd	cDUP, cSTAR, cEXIT
 
 
 
