@@ -3,10 +3,8 @@ section     .text
 extern 	printf			;include C printf function
 extern	c_WORD
 extern 	c_FIND
-extern 	atoi
 
 global	_start		;must be declared for linker (ld)
-global 	LATEST
 
 ;constant register allocations
 
@@ -41,7 +39,6 @@ DOCOLON:
 	jmp	NEXT
 
 
-PROGRAM dd 	QUIT
 
 ;DICTIONARY
 align 	16, db 0
@@ -95,10 +92,10 @@ hINTERPRET dd 	hEXIT
 	db 	"INTERPRET"
 	align	16, db 0
 	INTERPRET dd 	DOCOLON
-		dd 	ZERO, WERD, FIND
-		dd 	QBRANCH, 0x8, EXECUTE
-		dd 	BRANCH, 0x8, TONUM
-		dd 	EXIT
+		dd 	cZERO, cWERD, cFIND
+		dd 	cQBRANCH, 0x8, cEXECUTE
+		dd 	cBRANCH, 0x8, cTONUM
+		dd 	cEXIT
 
 align 	16, db 0
 hQBRANCH dd 	hINTERPRET
@@ -164,6 +161,7 @@ hFIND	dd 	hWERD
 				;match str to dict word
 				;push a -1/0/+1 depending on if found
 		push 	esp	;push &TOS to c_FIND
+		push 	LATEST	;push &h_of_last_word_in_dict
 		call 	c_FIND
 		sub 	esp, 	0x4 	;c_FIND pushed a val
 		jmp	NEXT
@@ -186,7 +184,7 @@ hTONUM	dd 	hEXECUTE
 	db	"TONUM"
 	align 	16, db 0
 	TONUM 	dd 	cTONUM
-	cTONUM: call 	atoi		;c lib func char->int
+	cTONUM: ;call 	atoi		;c lib func char->int
 		jmp	NEXT
 
 align 	16, db 0
@@ -204,10 +202,6 @@ hDOTESS dd 	hBYE
 	align 	16, db 0
 	DOTESS 	dd 	cDOTESS
 	cDOTESS:
-			push 	debugDD
-			call 	printf
-			add 	esp, 4
-		
 		mov 	ebx, [SP0]
 		sub 	ebx, esp
 		mov 	ecx, ebx
@@ -250,6 +244,8 @@ hSQUARED dd 	hDOTESS
 ; : SQUARED ( a -- a^2 ) DUP * ;
 
 section	.data
+
+PROGRAM dd 	QUIT
 
 SP0 dd 0 		;pointer to bottom of stack
 RSTACK TIMES 0x10 dd 0x0;return stack init

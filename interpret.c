@@ -4,11 +4,9 @@
 
 struct word_header{
 	struct word_header* prev;
-	char name[16];
+	char name[12];
 	int* codefield; // should be void* really :s
 };
-
-extern struct word_header* LATEST;
 
 // input_buffer[] = "5 DUP * DOT BYE ;"
 void c_WORD( char* out, char* in, int in_offset, int delim )
@@ -37,9 +35,8 @@ void c_WORD( char* out, char* in, int in_offset, int delim )
 	return;
 }
 
-void c_FIND( int* topOfStack, char* key )
+void c_FIND( struct word_header* here, int* topOfStack, char* key )
 {
-	struct word_header* here = LATEST; // searching loc'n
 	int* token = (int *)&key; // void* ??
 	int* flag = (int *)&token - 0x4; // 1 address higher on stack
 
