@@ -14,24 +14,25 @@ global	_start		;must be declared for linker (ld)
 
 _start:				;tell linker the entry point
 	mov 	[SP0],esp 	;store stack pointer in SP0
+	jmp	xQUIT	;cheat, jump straight to iLOOP
+
 	mov	esi, PROGRAM	;set the fPC
 	mov 	ebp, RSTACK
 	jmp	NEXT    	;go!
 
 ;"code fragments"
 NEXT:
-	mov 	eax, esi	;save fPC in eax
+	mov 	eax, [esi]	;save fPC in eax
 	add 	esi, 0x4 	;increment fPC
 	jmp 	[eax] 		;go to *fPC
 
-QUIT:
-	mov 	ebp, RSTACK	;clear return stack
+QUIT	dd 	xQUIT
+xQUIT:	mov 	ebp, RSTACK	;clear return stack
 	mov 	DWORD[in_str_os], 0 	;reset in_str offset
-	mov 	esi, INTERPRET 	;set fPC to INTERPRET
+	mov 	esi, ILOOP 	;set fPC to INTERPRET
 	jmp 	NEXT		;run INTERPRET
 
-DOCOLON:
-	mov 	[ebp], esi	;push fPC onto rtn stack
+DOCOLON:mov 	[ebp], esi	;push fPC onto rtn stack
 	add 	ebp, 0x4	;"
 				;eax=prev fPC
 	mov 	esi, eax	;resolve last fPC into fPC
@@ -39,22 +40,28 @@ DOCOLON:
 	jmp	NEXT
 
 
+; esi needs to hold a reference re: the pointer name at left
+	;eg: ILOOP + 0x8, rather than 'FIVE' or something
+
+PROGRAM dd 	QUIT
+ILOOP	dd 	FIVE, FIVE, DOTESS, SQUARED, DOTESS, BYE, EXIT
+
 
 ;DICTIONARY
 align 	16, db 0
 hFIVE	dd 	0
 	db	"5"
 	align 	16, db 0
-	FIVE 	dd 	cFIVE
-	cFIVE: 	push 	0x5
+	FIVE 	dd 	xFIVE
+	xFIVE: 	push 	0x5
 		jmp	NEXT
 
 align	16, db 0
 hDOT	dd 	hFIVE
 	db 	"."
 	align 	16, db 0
-	DOT 	dd 	cDOT
-	cDOT:	push 	message
+	DOT 	dd 	xDOT
+	xDOT:	push 	message
 		call 	printf
 		add 	esp, 8
 		jmp 	NEXT
@@ -63,16 +70,16 @@ align 	16, db 0
 hDUP 	dd 	hDOT
 	db 	"DUP"
 	align	16, db 0
-	DUP 	dd 	cDUP
-	cDUP: 	push	DWORD [esp]
+	DUP 	dd 	xDUP
+	xDUP: 	push	DWORD [esp]
 		jmp	NEXT
 
 align 	16, db 0
 hSTAR	dd 	hDUP
 	db 	"*"
 	align 	16, db 0
-	STAR 	dd 	cSTAR
-	cSTAR:	pop 	ebx
+	STAR 	dd 	xSTAR
+	xSTAR:	pop 	ebx
 		pop 	eax
 		imul 	ebx	;imul uses eax & stores in eax
 		push 	eax
@@ -82,8 +89,8 @@ align 	16, db 0
 hEXIT 	dd 	hSTAR
 	db 	"EXIT"
 	align	16, db 0	
-	EXIT	dd 	cEXIT
-	cEXIT:	sub	ebp, 0x4
+	EXIT	dd 	xEXIT
+	xEXIT:	sub	ebp, 0x4
 		mov 	esi, [ebp]
 		jmp 	NEXT
 
@@ -92,17 +99,17 @@ hINTERPRET dd 	hEXIT
 	db 	"INTERPRET"
 	align	16, db 0
 	INTERPRET dd 	DOCOLON
-		dd 	cZERO, cWERD, cFIND
-		dd 	cQBRANCH, 0x14, cEXECUTE
-		dd 	cBRANCH, 0x8, cTONUM
-		dd 	cDOTESS, cEXIT
+		dd 	ZERO, WERD, FIND
+		dd 	QBRANCH, 0x14, EXECUTE
+		dd 	BRANCH, 0x8, TONUM
+		dd 	DOTESS, EXIT
 
 align 	16, db 0
 hQBRANCH dd 	hINTERPRET
 	db 	"QBRANCH"
 	align	16, db 0
-	QBRANCH dd 	cQBRANCH
-	cQBRANCH:
+	QBRANCH dd 	xQBRANCH
+	xQBRANCH:
 		pop 	eax
 		cmp	eax,0 	;is TOS = 0?
 		jne	Q_NOTZ		;GOTO !0 branch
@@ -117,8 +124,8 @@ align 	16, db 0
 hBRANCH dd 	hQBRANCH
 	db 	"BRANCH"
 	align	16, db 0
-	BRANCH dd 	cBRANCH
-	cBRANCH:
+	BRANCH dd 	xBRANCH
+	xBRANCH:
 		add 	esi, [esi]	;move fPC forward by contents of fPC (B's arg)
 		jmp 	NEXT
 
@@ -126,16 +133,16 @@ align 	16, db 0
 hZERO	dd 	hBRANCH
 	db	"BL"
 	align 	16, db 0
-	ZERO 	dd 	cZERO
-	cZERO: 	push	0x20 		;push SPACE
+	ZERO 	dd 	xZERO
+	xZERO: 	push	0x20 		;push SPACE
 		jmp	NEXT
 
 align 	16, db 0
 hWERD	dd 	hZERO
 	db	"WORD"
 	align 	16, db 0
-	WERD 	dd 	cWERD
-	cWERD: 	push	DWORD[in_str_os];string offset (already read)
+	WERD 	dd 	xWERD
+	xWERD: 	push	DWORD[in_str_os];string offset (already read)
 		push 	in_str 		;address of input string
 		push 	word_str	;address of output return str
 		call 	c_WORD 		;ret length of WORD
@@ -152,8 +159,8 @@ align 	16, db 0
 hFIND	dd 	hWERD
 	db	"FIND"
 	align 	16, db 0
-	FIND 	dd 	cFIND
-	cFIND: 			;str is on stack
+	FIND 	dd 	xFIND
+	xFIND: 			;str is on stack
 				;match str to dict word
 				;push a -1/0/+1 depending on if found
 		; push 	esp	;push &TOS to c_FIND
@@ -171,27 +178,25 @@ align 	16, db 0
 hEXECUTE dd 	hFIND
 	db	"EXECUTE"
 	align 	16, db 0
-	EXECUTE dd 	cEXECUTE
-	cEXECUTE:
+	EXECUTE dd 	xEXECUTE
+	xEXECUTE:
 		pop 	ebx		;pop XT into eax
-		; je	X_IMM 		;if flag=1 DO IT NOW		
 		jmp	[ebx]		;NON-IMMEDIATE
-	; X_IMM:	jmp	[ebx]		;IMMEDIATE
 
 align 	16, db 0
 hTONUM	dd 	hEXECUTE
 	db	"TONUM"
 	align 	16, db 0
-	TONUM 	dd 	cTONUM
-	cTONUM: ;call 	atoi		;c lib func char->int
+	TONUM 	dd 	xTONUM
+	xTONUM: ;call 	atoi		;c lib func char->int
 		jmp	NEXT
 
 align 	16, db 0
 hBYE 	dd 	hTONUM
 	db 	"BYE"
 	align	16, db 0
-	BYE	dd 	cBYE
-	cBYE:	mov	eax,1
+	BYE	dd 	xBYE
+	xBYE:	mov	eax,1
 		pop 	ebx
 		int 	0x80
 
@@ -199,8 +204,8 @@ align 	16, db 0
 hDOTESS dd 	hBYE
 	db 	".S"
 	align 	16, db 0
-	DOTESS 	dd 	cDOTESS
-	cDOTESS:
+	DOTESS 	dd 	xDOTESS
+	xDOTESS:
 		mov 	ebx, [SP0]
 		sub 	ebx, esp
 		mov 	ecx, ebx
@@ -235,7 +240,7 @@ hSQUARED dd 	hDOTESS
 	db 	"SQUARED"
 	align	16, db 0
 	SQUARED dd 	DOCOLON
-		dd	cDUP, cSTAR, cEXIT
+		dd	DUP, STAR, EXIT
 
 
 
@@ -244,7 +249,6 @@ hSQUARED dd 	hDOTESS
 
 section	.data
 
-PROGRAM dd 	QUIT
 
 SP0 dd 0 		;pointer to bottom of stack
 RSTACK TIMES 0x10 dd 0x0;return stack init

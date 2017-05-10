@@ -14,6 +14,7 @@ void c_WORD( char* out, char* in, int in_offset, int delim )
 	char* out_ptr = out; // save ptr to return token
 	
 	in += in_offset; // shift in_ptr to next word
+	printf("%s\n", in);
 	int count = in_offset;
 	
 	while(*in != 0 && *in != delim){
