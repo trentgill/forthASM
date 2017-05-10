@@ -92,9 +92,9 @@ hINTERPRET dd 	hEXIT
 	db 	"INTERPRET"
 	align	16, db 0
 	INTERPRET dd 	DOCOLON
-		dd 	cZERO, cWERD, cDOTESS, cFIND, cDOTESS
-		dd 	cQBRANCH, 0x8, cEXECUTE
-		dd 	cDOTESS, cBRANCH, 0x8, cTONUM
+		dd 	cZERO, cWERD, cFIND
+		dd 	cQBRANCH, 0x14, cEXECUTE
+		dd 	cBRANCH, 0x8, cTONUM
 		dd 	cDOTESS, cEXIT
 
 align 	16, db 0
@@ -103,7 +103,8 @@ hQBRANCH dd 	hINTERPRET
 	align	16, db 0
 	QBRANCH dd 	cQBRANCH
 	cQBRANCH:
-		cmp	DWORD[esp],0 	;is TOS = 0?
+		pop 	eax
+		cmp	eax,0 	;is TOS = 0?
 		jne	Q_NOTZ		;GOTO !0 branch
 		;skip
 		add 	esi, [esi]	;move fPC forward by contents of fPC (QB's arg)
@@ -118,12 +119,7 @@ hBRANCH dd 	hQBRANCH
 	align	16, db 0
 	BRANCH dd 	cBRANCH
 	cBRANCH:
-		pop 	eax		;rm FLAG from stack
-		cmp	eax,0 		;is TOS = 0?
-		je	B_ISZ		;GOTO !0 branch
 		add 	esi, [esi]	;move fPC forward by contents of fPC (B's arg)
-		jmp 	NEXT
-	B_ISZ:	add 	esi, 0x4 	;skip B's arg
 		jmp 	NEXT
 
 align 	16, db 0
@@ -177,12 +173,10 @@ hEXECUTE dd 	hFIND
 	align 	16, db 0
 	EXECUTE dd 	cEXECUTE
 	cEXECUTE:
-		pop 	eax		;pop FLAG into eax
 		pop 	ebx		;pop XT into eax
-		cmp	eax, 1
-		je	X_IMM 		;if flag=1 DO IT NOW		
+		; je	X_IMM 		;if flag=1 DO IT NOW		
 		jmp	[ebx]		;NON-IMMEDIATE
-	X_IMM:	jmp	[ebx]		;IMMEDIATE
+	; X_IMM:	jmp	[ebx]		;IMMEDIATE
 
 align 	16, db 0
 hTONUM	dd 	hEXECUTE
