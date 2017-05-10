@@ -44,7 +44,7 @@ DOCOLON:mov 	[ebp], esi	;push fPC onto rtn stack
 	;eg: ILOOP + 0x8, rather than 'FIVE' or something
 
 PROGRAM dd 	QUIT
-ILOOP	dd 	FIVE, FIVE, DOTESS, SQUARED, DOTESS, BYE, EXIT
+ILOOP	dd 	INTERPRET, BRANCH, -0x8, BYE, EXIT
 
 
 ;DICTIONARY
