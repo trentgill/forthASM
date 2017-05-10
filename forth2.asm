@@ -14,8 +14,6 @@ global	_start		;must be declared for linker (ld)
 
 _start:				;tell linker the entry point
 	mov 	[SP0],esp 	;store stack pointer in SP0
-	jmp	xQUIT	;cheat, jump straight to iLOOP
-
 	mov	esi, PROGRAM	;set the fPC
 	mov 	ebp, RSTACK
 	jmp	NEXT    	;go!
@@ -42,7 +40,6 @@ DOCOLON:mov 	[ebp], esi	;push fPC onto rtn stack
 
 ; esi needs to hold a reference re: the pointer name at left
 	;eg: ILOOP + 0x8, rather than 'FIVE' or something
-
 PROGRAM dd 	QUIT
 ILOOP	dd 	INTERPRET, BRANCH, -0x8, BYE, EXIT
 
@@ -180,8 +177,8 @@ hEXECUTE dd 	hFIND
 	align 	16, db 0
 	EXECUTE dd 	xEXECUTE
 	xEXECUTE:
-		pop 	ebx		;pop XT into eax
-		jmp	[ebx]		;NON-IMMEDIATE
+		pop 	eax		;pop XT into eax
+		jmp	[eax]		;NON-IMMEDIATE
 
 align 	16, db 0
 hTONUM	dd 	hEXECUTE
@@ -255,7 +252,7 @@ RSTACK TIMES 0x10 dd 0x0;return stack init
 
 LATEST dd hSQUARED 	;pointer to header of last word added to dict
 
-in_str db "5 DUP * . BYE ;",0 ;fake shell input string
+in_str db "5 SQUARED . BYE ;",0 ;fake shell input string
 in_str_os dd 0 		;save how many chars have been used
 word_str TIMES 0x10 db 0
 

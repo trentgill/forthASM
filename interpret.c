@@ -47,6 +47,7 @@ void c_FIND( void* r_stk, struct word_header* here, char* key )
 	do{
 		if(strcmp( here->name, key ) == 0){
 			printf("FOUND!\n\r");
+			printf("%p\n", &(here->codefield));
 			*TOS = (int)&(here->codefield);
 			*TOS_next = 1; // SET FLAG TO 1 (EXECUTE)
 			return;
