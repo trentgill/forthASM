@@ -43,6 +43,26 @@ DOCOLON:mov 	[ebp], esi	;push fPC onto rtn stack
 PROGRAM dd 	QUIT
 ILOOP	dd 	INTERPRET, BRANCH, -0x8, BYE, EXIT
 
+%macro 	HEADARR 2
+	align 16, db 0
+	dd 	<*prev_word>
+	db 	"%1"	;max 12chars, unless change to align 32(wasteful)
+	align	16, db 0
+	dd 	x%1
+	x%1:		;this gets funky
+			;by implementing, it will be easy to rm 1
+			;layer of indirection.
+			;additionally, consider inserting
+			;DOCOLON as part of the header of a composite word
+
+			;NEXT could be added to DICT words with
+			;macro inclusion, rather than a jmp instruction
+
+			;i think EXIT still needs to be a forth
+			;word as it's called via NEXT to unset DOCOLON
+%endmacro
+
+
 
 ;DICTIONARY
 align 	16, db 0
@@ -176,7 +196,7 @@ hEXECUTE dd 	hFIND
 	db	"EXECUTE"
 	align 	16, db 0
 	EXECUTE dd 	xEXECUTE
-	xEXECUTE:
+	xEXECUTE:			;note eax req'd for DOCOLON to work
 		pop 	eax		;pop XT into eax
 		jmp	[eax]		;NON-IMMEDIATE
 
@@ -233,7 +253,15 @@ hDOTESS dd 	hBYE
 		jmp 	NEXT
 
 align 	16, db 0
-hSQUARED dd 	hDOTESS
+hCOLON dd 	hDOTESS
+	db 	"COLON"
+	align	16, db 0
+	COLON 	dd 	
+			;create new dictionary word from next token
+			
+
+align 	16, db 0
+hSQUARED dd 	hCOLON
 	db 	"SQUARED"
 	align	16, db 0
 	SQUARED dd 	DOCOLON
