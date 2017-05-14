@@ -1,231 +1,233 @@
 section     .text
 
 extern 	printf			;include C printf function
+; extern	c_WORD
+; extern 	c_FIND
+extern 	atoi
 
-global      _start		;must be declared for linker (ld)
+global	_start		;must be declared for linker (ld)
+global 	LATEST
+
+;constant register allocations
+
+; esp:	TOS pointer
+; esi: 	forth program counter
+; ebp: 	return stack pointer
 
 _start:				;tell linker the entry point
-	mov 	[SP0],esp 	;store stack pointer in SP0
-	mov	esi,PROGRAM	;set the fPC
-	mov 	DWORD [STACK_P], RSTACK 
-;insert INIT_D in here 	
+	; mov 	[SP0],esp 	;store stack pointer in SP0
+	mov	esi, PROGRAM	;set the fPC
+	mov 	ebp, RSTACK
 	jmp	NEXT    	;go!
 
-INIT_D:
-
-
-
-
+;"code fragments"
 NEXT:
-	mov	eax,[esi]	;*fPC into eax
-	add	esi,0x4		;inc address by 8 due to 32bit
-	cmp 	DWORD[esi],0
-	je	N_J
-	;composite word
-	mov 	ebx,[eax]
-	mov 	eax, ebx
-N_J:	add 	esi,0x4	
-	jmp	eax
+	mov 	eax, esi	;save fPC in eax
+	add 	esi, 0x4 	;increment fPC
+	jmp 	[eax] 		;go to *fPC
 
-DOTESS:
-	;ebx is base-stack-pointer
-	;ecx is size, and then decrements to zero
-	mov 	ebx, [SP0]
-	sub	ebx, esp	;find stack size (in 32b)
-	mov 	ecx, ebx	;copy size
-	sar 	ecx, 2 		;bytes in 32b
-	; print size
-	push	ecx		;push size to stack
-	push	ds_sz 		;format "<size>"
-	call 	printf
-	add 	esp, 8		;remove msg from stack
-	; print contents
-DS_ITER:jbe	DS_ENDR		;close print if size == 0
-	mov 	ecx, esp	;save stack pointer
-	add 	ecx, ebx	;move toward base from top
-	sub 	ecx, 4
-	mov 	edx, [ecx]	;derefence val and store in edx
-	
-	push	edx
-	push	ds_num		;end printf message (\n\r)
-	call 	printf
-	add 	esp, 8		;remove msg from stack pointer
-	
-	sub 	ebx, 4		;decrement counter (set flags!)
-	jmp 	DS_ITER		;iterate through stack
-	;print end of msg
-DS_ENDR:push	ds_end		;end printf message (\n\r)
-	call 	printf
-	add 	esp, 4		;remove msg from stack pointer
-	jmp	NEXT
+QUIT:
+	mov 	ebp, RSTACK	;clear return stack
+	mov 	DWORD[in_str_os], 0 	;reset in_str offset
+	mov 	esi, INTERP 	;set fPC to INTERP
+	jmp 	NEXT		;run INTERP
 
-DOT:
-	push	message
-	call 	printf
-	add 	esp, 8		;restore stack?! shouldn't be -ve?
-	jmp	NEXT
-
-DUP:
-	push 	DWORD [esp]
-	jmp	NEXT
-
-STAR:
-	pop	ebx
-	pop	eax
-	imul	eax, ebx
-	push	eax
-	jmp	NEXT
-
-SEVEN:
-	push	0x7
-	jmp	NEXT
-
-FIVE:
-	push	0x5
+DOCOLON:
+	mov 	[ebp], esi	;push fPC onto rtn stack
+	add 	ebp, 0x4	;"
+				;eax=prev fPC
+	mov 	esi, eax	;resolve last fPC into fPC
+	add 	esi, 0x4	;move 1 word forward
 	jmp	NEXT
 
 
-;MATH ops
-; CROSS:
-; DASH:
-; STAR:
-; SLASH:
-; PERCENT:
+;DICTIONARY
+align 	16, db 0
+hFIVE	dd 	0
+	db	"5"
+	align 	16, db 0
+	FIVE 	dd 	cFIVE
+	cFIVE: 	push 	0x5
+		jmp	NEXT
 
-;STACK ops
-; DUP: ;( a -- a a )
-; SWAP: ;( a b -- b a )
-; DROP: ;( a -- )
-; OVER: ;( a b -- a b a )
-; ROT: ;( a b c -- b c a )
+align	16, db 0
+hDOT	dd 	hFIVE
+	db 	"."
+	align 	16, db 0
+	DOT 	dd 	cDOT
+	cDOT:	push 	message
+		call 	printf
+		add 	esp, 8
+		jmp 	NEXT
 
-;FLOW control
-; IF:
-; ELSE:
-; THEN:
-; BEGIN: ;( -- )
-; WHILE: ;( b -- _)
-; REPEAT: ;( -- )
-; DO: ;( j i -- )
-; LOOP: ;( -- )
-; +LOOP: ;( n -- )
+align 	16, db 0
+hDUP 	dd 	hDOT
+	db 	"DUP"
+	align	16, db 0
+	DUP 	dd 	cDUP
+	cDUP: 	push	DWORD [esp]
+		jmp	NEXT
 
-;COMPARE ops
-; LESS: ;( a b -- f )
-; LEQ: ;( a b -- f )
-; EQ: ;( a b -- f )
-; GREATER: ;( a b -- f )
-; GEQ: ;( a b -- f )
+align 	16, db 0
+hSTAR	dd 	hDUP
+	db 	"*"
+	align 	16, db 0
+	STAR 	dd 	cSTAR
+	cSTAR:	pop 	ebx
+		pop 	eax
+		imul 	ebx	;imul uses eax & stores in eax
+		push 	eax
+		jmp 	NEXT
 
-;HELPERS
-; COLON: ;starts new word definition
-; WORDS: ;( -- ) prints list of all words in system
-; SEE: ;( "word" -- ) prints definition of given word
+align 	16, db 0
+hEXIT 	dd 	hSTAR
+	db 	"EXIT"
+	align	16, db 0	
+	EXIT	dd 	cEXIT
+	cEXIT:	sub	ebp, 0x4
+		mov 	esi, [ebp]
+		jmp 	NEXT
 
-;INTERPRETER
-; BL: ;( -- 32 ) pushes a "BLank" char (null token)
-; CHAR: ;( "c" -- char ) push value of char to input stream
-; FIND: ;( str -- str 0 | xt 1 | xt -1 ); search for word <str>
-	;if not found, leave str on stack, push 0
-	;if found, replace <str> w exec token
-		;if immediate push 1
-		;else push -1
-; WORD: ;( ch "token" -- str ) consume stream to <ch>
-	; and push pointer to this token
+align 	16, db 0
+hZERO	dd 	hEXIT
+	db	"BL"
+	align 	16, db 0
+	ZERO 	dd 	cZERO
+	cZERO: 	push	DWORD 0x20	;push SPACE
+		jmp	NEXT
 
-BYE:	
-	mov	eax,1                               ;system call number (sys_exit)
-	int	0x80                                ;call kernel
+align 	16, db 0
+hQBRANCH dd 	hZERO
+	db 	"QBRANCH"
+	align	16, db 0
+	QBRANCH dd 	hBRANCH
+	cQBRANCH:
+		cmp	DWORD[esp],0 	;is TOS = 0?
+		jne	Q_NOTZ		;GOTO !0 branch
+		;skip
+		add 	esi, [esi]	;move fPC forward by contents of fPC (QB's arg)
+		jmp 	NEXT
+		;IF = TRUE
+	Q_NOTZ:	add 	esi, 0x4 	;skip QB's arg
+		jmp 	NEXT
 
-NEXT:
-	mov	eax,[esi]	;*fPC into eax
-	add	esi,0x4		;inc address by 8 due to 32bit
-	cmp 	DWORD[esi],0
-	je	N_J
-	;composite word
-	mov 	ebx,[eax]
-	mov 	eax, ebx
-N_J:	add 	esi,0x4	
-	jmp	eax
+align 	16, db 0
+hBRANCH dd 	hQBRANCH
+	db 	"BRANCH"
+	align	16, db 0
+	BRANCH dd 	cBRANCH
+	cBRANCH:
+		pop 	eax		;rm FLAG from stack
+		cmp	eax,0 		;is TOS = 0?
+		je	B_ISZ		;GOTO !0 branch
+		add 	esi, [esi]	;move fPC forward by contents of fPC (B's arg)
+		jmp 	NEXT
+	B_ISZ:	add 	esi, 0x4 	;skip B's arg
+		jmp 	NEXT
 
-JUMP:
-	sub 	esi, 0x4	;go to previous PC (this call!)
-	mov 	ecx, [esi] 	;deref PC into sub-fn
-	add 	ecx, 0x8 	;this is 1st inst, go to 2nd
-	mov 	esi, ecx
+align 	16, db 0
+hWERD	dd 	hBRANCH
+	db	"WORD"
+	align 	16, db 0
+	WERD 	dd 	cWERD
+	cWERD: 	
+		; push	DWORD[in_str_os];string offset (already read)
+		push 	in_str 		;address of input string
+		push 	word_str	;address of output return str
+		; call 	c_WORD 		;ret length of WORD
+		add 	esp, 0x8 	;drop 2 vals
+		pop 	DWORD[in_str_os];update offset
+			; leaves *token(as string) on stack
+		jmp	NEXT
+		; passes test (for first word)
+		; drops top 2 vals on stack
+		; pushes count-of-used chars into in_str_os var
+		; leaves *word_str on stack
 
-	mov	eax,[esi]	;*fPC into eax
-	add	esi,0x4		;inc address by 8 due to 32bit
-	cmp 	DWORD[esi],0
-	add 	esi,0x4	
-	jmp	eax
-
-
-
-ENTER:
-	;push
-	mov 	eax, [STACK_P] 	;deref TOS into eax
-	mov 	[eax], esi	;save prog counter's address
-	add 	DWORD [STACK_P],0x4		;inc stack pointer
-	;
-	sub 	esi, 0x8	;go to previous PC location
-	mov 	ecx, [esi] 	;deref PC into sub-fn
-	add 	ecx, 0x8 	;this is 1st inst, go to 2nd
-	mov 	esi, ecx
-	 	;set PC to 2nd command in metafn
-	jmp 	NEXT
-
-EXIT:
-	sub 	DWORD [STACK_P], 0x4
-	mov 	eax, [STACK_P]
-	mov 	esi, [eax]
-	jmp 	NEXT
-	
-; program map
-PROGRAM:;
-	;dd 	ENTER
-	dd 	FIVE, SQUARE, DUP, DOTESS, BYE
-
-SQUARE:
-	dd 	ENTER,	0
-	dd 	DUP, 0, STAR, 0, EXIT, 0
-
-
-;"name", address, flag(JUMP/ENTER), next-entry
-DICTIONARY:
-	;native words
-	dd 	'NEXT'	,JUMP,NEXT 	,dict[1]
-	dd 	'.S'	,JUMP,DOTESS	,?
-	dd 	'.' 	,JUMP,DOT 	,
-	dd 	'DUP'	,JUMP,DUP 	,
-	dd 	'*' 	,JUMP,STAR 	,
-	dd 	'7'	,JUMP,SEVEN	,
-	dd 	'5'	,JUMP,FIVE 	,
-	dd 	'BYE'	,JUMP,BYE 	,
-	dd 	'ENTER'	,JUMP,ENTER 	,
-	dd 	'EXIT'	,JUMP,EXIT 	,0x0
-	;composite words (only for eg)
-	dd 	'SQUARE',ENTER,DUP,STAR,EXIT 	,0x0
-
-;rather than having a flag at each address
-;the dict just has an index which says "last imm. word"
-;if 
-;NOPE: this can't work bc the composite words are 
-;a linked list and thus not related to any absolute ix
+align 	16, db 0
+hINTERP dd 	hWERD
+	db 	"INTERP"
+	align	16, db 0
+	INTERP 	dd 	DOCOLON
+		dd 	ZERO, WERD, FIND
+		dd 	QBRANCH, 0x8, EXECUTE
+		dd 	BRANCH, 0x8, TONUM
+		dd 	EXIT
 
 
+; align 	16, db 0
+hFIND	dd 	hINTERP
+	db	"FIND"
+	align 	16, db 0
+	FIND 	dd 	cFIND
+	cFIND: 			;str is on stack
+				;match str to dict word
+				;push a -1/0/+1 depending on if found
+		push 	esp
+		; call 	c_FIND
+		sub 	esp, 0x4;c_FIND pushes 1 val
+		jmp	NEXT
 
-;vars called above have to be in .data!! otherwise no access!
-section     .data
+align 	16, db 0
+hEXECUTE dd 	hFIND
+	db	"EXECUTE"
+	align 	16, db 0
+	EXECUTE dd 	cEXECUTE
+	cEXECUTE:
+		pop 	eax		;pop FLAG into eax
+		pop 	ebx		;pop XT into eax
+		cmp	eax, 1
+		je	X_IMM 		;if flag=1 DO IT NOW		
+		jmp	[ebx]		;NON-IMMEDIATE
+	X_IMM:	jmp	[ebx]		;IMMEDIATE
 
-SP0	dd 	0x0 			;var to hold stack base pointer
+align 	16, db 0
+hTONUM	dd 	hEXECUTE
+	db	"TONUM"
+	align 	16, db 0
+	TONUM 	dd 	cTONUM
+	cTONUM: call 	atoi		;c lib func char->int
+		jmp	NEXT
 
-RSTACK TIMES 0xF dd 0x0
-STACK_P dd 	0x0
+align 	16, db 0
+hBYE 	dd 	hTONUM
+	db 	"BYE"
+	align	16, db 0
+	BYE	dd 	cBYE
+	cBYE:	mov	eax,1
+		pop 	ebx
+		int 	0x80
 
-ds_sz 	db  '<0x%x> ',0x0 		;no new line!
-ds_num 	db  '0x%x ',0x0 		;print a hex num
-ds_end 	db  'nice stack ;)',0xA,0x0 	;close printf statement
+align 	16, db 0
+hSQUARED dd 	hBYE
+	db 	"SQUARED"
+	align	16, db 0
+	SQUARED dd 	DOCOLON
+		dd	DUP, STAR, EXIT
+
+; align 16, db 0
+
+; : SQUARED ( a -- a^2 ) DUP * ;
+
+section	.data
+
+PROGRAM dd 	QUIT
+
+
+
+SP0 	dd 0 		;pointer to bottom of stack
+RSTACK  TIMES 0x10 dd 0x0;return stack init
+
+LATEST  dd hSQUARED 	;pointer to header of last word added to dict
+
+in_str  db "5 DUP * . BYE ;",0 ;fake shell input string
+in_str_os dd 0 		;save how many chars have been used
+word_str TIMES 0x10 db 0
 
 message	db  'the number: 0x%x', 0xA, 0x0
-;len     equ $ - msg 			;length of our dear string
+debugP 	db  'asm_p: %p',0xA,0x0
+debugDD db  'asm_dd: 0x%x',0xA,0x0
+
+; ds_sz 	db  '<0x%x> ',0x0 		;no new line!
+; ds_num 	db  '0x%x ',0x0 		;print a hex num
+; ds_end 	db  'nice stack ;)',0xA,0x0 	;close printf statement
