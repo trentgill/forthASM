@@ -33,6 +33,15 @@ QUIT:	mov 	ebp, RSTACK	;clear return stack
 	mov 	esi, ILOOP 	;set fPC to INTERPRET
 	NEXT			;run INTERPRET
 
+; [quit]
+; RP0 RP!
+; BEGIN
+; 	STATE @IF
+; 		compile_word
+; 	ELSE
+; 		interpret_word
+; 	THEN
+; AGAIN
 
 PROGRAM dd 	QUIT
 ILOOP	dd 	INTERPRET, BRANCH, -0x8, BYE, EXIT
@@ -225,6 +234,23 @@ HEADR 	INTERPRET, "INTERPRET"
 	dd 	ZERO, WERD, FIND
 	dd 	QBRANCH, 0x10, EXECUTE, BRANCH, 0x8
 	dd 	TONUM, EXIT
+
+HEADR 	COMPILE, "COMPILE"
+	dd 	ZERO, WERD, FIND
+	dd 	QDUP, QBRANCH, 0x20, 
+; [compile_word]
+; BL WORD FIND
+; ?DUP IF
+;	<0 IF
+;		EXECUTE
+; 	ELSE
+;		COMPILE
+; 	THEN
+; THEN
+
+
+; ?DUP gives zero if a number is found
+
 
 HEADR	SQUARED, "SQUARED"
 	dd	DUP, STAR, EXIT
