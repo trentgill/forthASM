@@ -121,7 +121,6 @@ HEADR 	EXECUTE, "EXECUTE" 	;note eax req'd for DOCOLON to work
 	jmp	eax		;NON-IMMEDIATE
 
 HEADR 	TONUM, "TONUM"
-	
 	pop	ecx		;pop *string off stack
 	mov 	eax, 0 		;clear eax (store output val)
 
