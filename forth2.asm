@@ -182,7 +182,7 @@ HEADR 	COLON, ":"
 	add 	ebp, 0x4	;"
 				;eax=prev fPC
 	mov 	esi, eax	;last fPC into fPC
-	add 	esi, 0x20	;move 1 word forward
+	add 	esi, 0x20	;move DOCOLON + NXT words forward
 	NXT
 	align	16, db 0 	;force DWORD alignment
 %endmacro
