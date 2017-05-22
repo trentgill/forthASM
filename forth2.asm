@@ -133,7 +133,7 @@ hINTERPRET dd 	hEXIT
 		dd 	ZERO, WERD, FIND
 		dd 	QBRANCH, 0x14, EXECUTE
 		dd 	BRANCH, 0x8, TONUM
-		dd 	DOTESS, EXIT
+		dd 	EXIT
 
 align 	16, db 0
 hQBRANCH dd 	hINTERPRET

@@ -14,7 +14,7 @@ void c_WORD( char* out, char* in, int in_offset, int delim )
 	char* out_ptr = out; // save ptr to return token
 	
 	in += in_offset; // shift in_ptr to next word
-	printf("%s\n", in);
+	// printf("WORD: %s\n", in);
 	int count = in_offset;
 	
 	while(*in != 0 && *in != delim){
@@ -46,8 +46,7 @@ void c_FIND( void* r_stk, struct word_header* here, char* key )
 
 	do{
 		if(strcmp( here->name, key ) == 0){
-			printf("FOUND!\n\r");
-			printf("%p\n", &(here->codefield));
+			// printf("FOUND!\n");
 			*TOS = (int)&(here->codefield);
 			*TOS_next = 1; // SET FLAG TO 1 (EXECUTE)
 			return;
@@ -55,7 +54,6 @@ void c_FIND( void* r_stk, struct word_header* here, char* key )
 		here = here->prev; // go to prev word in DICT
 	} while(here != NULL);
 
-	printf("\n\rMUST BE A NUMBER\n\r");
 	*TOS = (int)key;
 	*TOS_next = 0; // SET FLAG TO 0 (>NUM)
 	return;
