@@ -125,8 +125,26 @@ HEADR 	EXECUTE, "EXECUTE" 	;note eax req'd for DOCOLON to work
 	jmp	eax		;NON-IMMEDIATE
 
 HEADR 	TONUM, "TONUM"
-	;unimplemented!
+	pop	ecx		;pop *string off stack
+	mov 	eax, 0 		;clear eax (store output val)
+NIN:	cmp 	BYTE[ecx], 0x0 	;terminator
+	je 	NEND		;if num processed jump out!
+	cmp 	BYTE[ecx], 0x30 ;is it >= '0'
+	jl	ABORT 		;not a number
+	cmp 	BYTE[ecx], 0x39 ;is it <= 9
+	jg 	ABORT 		;not a number
+	sub 	BYTE[ecx], 0x30 ;rebase to 0
+	mov 	ebx, 0xA
+	imul	ebx 		;mul eax*10: move decimal place
+	add 	eax, [ecx] 	;add new digit to count
+	add 	ecx, 0x1 	;next byte
+	jmp 	NIN 		;repeat
+NEND:	push 	eax 		;push result
 	NEXT
+
+HEADR 	ABORT, "ABORT"
+	;print error message
+	jmp 	QUIT 		;return to top-level
 
 HEADR 	BYE, "BYE"
 	mov	eax,1
