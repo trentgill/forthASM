@@ -14,7 +14,7 @@ global	_start		;must be declared for linker (ld)
 
 
 ; research combined copy&increment instruction
-%macro NXT 0
+%macro NEXT 0
 	mov 	eax, [esi]	;save fPC in eax
 	add 	esi, 0x4 	;increment fPC
 	jmp 	eax 		;go to fPC
@@ -25,13 +25,13 @@ _start:				;tell linker the entry point
 	mov 	[SP0],esp 	;store stack pointer in SP0
 	mov	esi, PROGRAM	;set the fPC
 	mov 	ebp, RSTACK
-	NXT    	;go!
+	NEXT    	;go!
 
 ;"code fragments"
 QUIT:	mov 	ebp, RSTACK	;clear return stack
 	mov 	DWORD[in_str_os], 0 	;reset in_str offset
 	mov 	esi, ILOOP 	;set fPC to INTERPRET
-	NXT			;run INTERPRET
+	NEXT			;run INTERPRET
 
 
 PROGRAM dd 	QUIT
@@ -55,29 +55,29 @@ ILOOP	dd 	INTERPRET, BRANCH, -0x8, BYE, EXIT
 
 HEADR 	FIVE, "5"
 	push 	0x5
-	NXT 		;threaded tail
+	NEXT 		;threaded tail
 
 HEADR 	DOT, "."
 	push 	message
 	call 	printf
 	add 	esp, 8
-	NXT
+	NEXT
 
 HEADR 	DUP, "DUP"
  	push	DWORD [esp]
-	NXT
+	NEXT
 
 HEADR 	STAR, "*"
 	pop 	ebx
 	pop 	eax
 	imul 	ebx	;imul uses eax & stores in eax
 	push 	eax
-	NXT
+	NEXT
 
 HEADR 	EXIT, "EXIT"
 	sub	ebp, 0x4
 	mov 	esi, [ebp]
-	NXT
+	NEXT
 
 HEADR 	QBRANCH, "?BRANCH"
 	pop 	eax
@@ -85,18 +85,18 @@ HEADR 	QBRANCH, "?BRANCH"
 	jne	Q_NOTZ		;GOTO !0 branch
 	;skip
 	add 	esi, [esi]	;move fPC forward by contents of fPC (QB's arg)
-	NXT
+	NEXT
 	;IF = TRUE
 Q_NOTZ:	add 	esi, 0x4 	;skip QB's arg
-	NXT
+	NEXT
 
 HEADR 	BRANCH, "BRANCH"
 	add 	esi, [esi]	;move fPC forward by contents of fPC (B's arg)
-	NXT
+	NEXT
 
 HEADR 	ZERO, "BL"
  	push	0x20 		;push SPACE
-	NXT
+	NEXT
 
 HEADR 	WERD, "WORD"
 	push	DWORD[in_str_os];string offset (already read)
@@ -106,7 +106,7 @@ HEADR 	WERD, "WORD"
 	add 	esp, 0x8 	;drop 2 vals
 	pop 	DWORD[in_str_os];update offset
 		; leaves *token(as string) on stack
-	NXT
+	NEXT
 
 HEADR 	FIND, "FIND"
 	push 	LATEST	;push &h_of_last_word_in_dict
@@ -117,7 +117,7 @@ HEADR 	FIND, "FIND"
 	push 	DWORD[ebp]
 	sub 	ebp, 0x4
 	push 	DWORD[ebp]
-	NXT
+	NEXT
 
 
 HEADR 	EXECUTE, "EXECUTE" 	;note eax req'd for DOCOLON to work
@@ -126,7 +126,7 @@ HEADR 	EXECUTE, "EXECUTE" 	;note eax req'd for DOCOLON to work
 
 HEADR 	TONUM, "TONUM"
 	;unimplemented!
-	NXT
+	NEXT
 
 HEADR 	BYE, "BYE"
 	mov	eax,1
@@ -161,14 +161,14 @@ DS_ITER:jbe	DS_ENDR
 DS_ENDR:push 	ds_end
 	call 	printf
 	add 	esp, 4
-	NXT
+	NEXT
 
 HEADR 	COLON, ":"
 	;first allocate a new dictionary header
 	;set the 'COMPILE' flag so next iteration of
 	;QUIT loop sends following WORD into compile_word
 	;rather than INTERPRET
-	NXT
+	NEXT
 	;should this be in a register so it's quick access
 	;as the flag is checked when parsing any word
 	;?is this a high-volume use case?
@@ -182,8 +182,8 @@ HEADR 	COLON, ":"
 	add 	ebp, 0x4	;"
 				;eax=prev fPC
 	mov 	esi, eax	;last fPC into fPC
-	add 	esi, 0x20	;move DOCOLON + NXT words forward
-	NXT
+	add 	esi, 0x20	;move DOCOLON + NEXT words forward
+	NEXT
 	align	16, db 0 	;force DWORD alignment
 %endmacro
 
@@ -191,7 +191,7 @@ HEADR 	COLON, ":"
 	align 	16, db 0
 	h%1 	dd 	prev_h 		;previous invocation's header
 		%define prev_h 	h%1 	;redefine prev_h!
-		db 	%2		;max 12chars, unless change to align 32(wasteful)
+		db 	%2		;max 12chars
 		align	16, db 0
 		%1: 	DOCOLON
 %endmacro
