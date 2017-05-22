@@ -81,7 +81,7 @@ HEADR 	EXIT, "EXIT"
 
 HEADR 	QBRANCH, "?BRANCH"
 	pop 	eax
-	cmp	eax,0 	;is TOS = 0?
+	cmp	eax,0 		;is TOS = 0?
 	jne	Q_NOTZ		;GOTO !0 branch
 	;skip
 	add 	esi, [esi]	;move fPC forward by contents of fPC (QB's arg)
