@@ -234,7 +234,7 @@ RSTACK TIMES 0x10 dd 0x0;return stack init
 
 LATEST dd hSQUARED 	;pointer to header of last word added to dict
 
-in_str db "5 SQUARED . BYE ;",0 ;fake shell input string
+in_str db "4 SQUARED . BYE ;",0 ;fake shell input string
 in_str_os dd 0 		;save how many chars have been used
 word_str TIMES 0x10 db 0
 

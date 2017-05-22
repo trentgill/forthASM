@@ -9,7 +9,6 @@ struct word_header{
 	uint32_t* codefield; // should be void* really :s
 };
 
-// input_buffer[] = "5 DUP * DOT BYE ;"
 void c_WORD( uint8_t* out, uint8_t* in, uint32_t in_offset, uint32_t delim )
 {
 	uint8_t* out_ptr = out; // save ptr to return token
