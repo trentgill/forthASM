@@ -146,6 +146,12 @@ HEADR 	ABORT, "ABORT"
 	;print error message
 	jmp 	QUIT 		;return to top-level
 
+HEADR 	QDUP, "?DUP" 		;DUP stack if non-zero
+	cmp 	DWORD [esp], 0 	;is zero?
+	je 	QDNO		;skip DUP if zero
+ 	push	DWORD [esp] 	;duplicate TOS!
+QDNO:	NEXT
+
 HEADR 	BYE, "BYE"
 	mov	eax,1
 	pop 	ebx
