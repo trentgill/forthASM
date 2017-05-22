@@ -43,35 +43,49 @@ DOCOLON:mov 	[ebp], esi	;push fPC onto rtn stack
 PROGRAM dd 	QUIT
 ILOOP	dd 	INTERPRET, BRANCH, -0x8, BYE, EXIT
 
-%macro 	HEADARR 2
-	align 16, db 0
-	dd 	<*prev_word>
-	db 	"%1"	;max 12chars, unless change to align 32(wasteful)
-	align	16, db 0
-	dd 	x%1
-	x%1:		;this gets funky
-			;by implementing, it will be easy to rm 1
-			;layer of indirection.
-			;additionally, consider inserting
-			;DOCOLON as part of the header of a composite word
+;arg1: internal name; arg2: string name for interpretter
+;NB: the tags can be removed now as the calls can be direct
+;also: the final 'dd' indirection line can be RM after DOCOLON inlined
+LAST_H	dd 	0
 
-			;NEXT could be added to DICT words with
-			;macro inclusion, rather than a jmp instruction
+%macro 	HEADR 2
+	align 	16, db 0
+	h%1 	dd 	0 		;<*prev_word>
+		db 	%2		;max 12chars, unless change to align 32(wasteful)
+		align	16, db 0
+		%1 	dd 	x%1
+		x%1:
+%endmacro			
 
-			;i think EXIT still needs to be a forth
-			;word as it's called via NEXT to unset DOCOLON
+; research combined copy&increment instruction
+%macro NXT 0
+	mov 	eax, [esi]	;save fPC in eax
+	add 	esi, 0x4 	;increment fPC
+	jmp 	[eax] 		;go to *fPC
 %endmacro
 
+	;NEXT could be added to each DICT word
 
+	;EXIT still needs to be a forth word
+
+	;DOCOLON as part of the header of a composite word
+	;to move DOCOLON into header requires DC to
+	;dereference into xt then move forward #bytes
+	;equal to size of DOCOLON instructions.
 
 ;DICTIONARY
-align 	16, db 0
-hFIVE	dd 	0
-	db	"5"
-	align 	16, db 0
-	FIVE 	dd 	xFIVE
-	xFIVE: 	push 	0x5
-		jmp	NEXT
+HEADR 	FIVE, "5"
+	push 	0x5
+	NXT 		;threaded tail
+
+; align 	16, db 0
+; hFIVE	dd 	0
+	; db	"5"
+	; align 	16, db 0
+	; FIVE 	dd 	xFIVE
+	; xFIVE: 	
+		; push 	0x5
+		; jmp	NEXT
 
 align	16, db 0
 hDOT	dd 	hFIVE
@@ -256,8 +270,15 @@ align 	16, db 0
 hCOLON dd 	hDOTESS
 	db 	"COLON"
 	align	16, db 0
-	COLON 	dd 	
-			;create new dictionary word from next token
+	COLON 	dd 	xCOLON
+	xCOLON: ;first allocate a new dictionary header
+		;set the 'COMPILE' flag so next iteration of
+		;QUIT loop sends following WORD into compile_word
+		;rather than INTERPRET
+
+		;should this be in a register so it's quick access
+		;as the flag is checked when parsing any word
+		;?is this a high-volume use case?
 			
 
 align 	16, db 0
