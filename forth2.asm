@@ -1,4 +1,4 @@
-section     .text
+section	.text
 
 extern 	printf			;include C printf function
 extern	c_WORD
