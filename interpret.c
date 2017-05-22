@@ -46,7 +46,6 @@ void c_FIND( void* r_stk, struct word_header* here, uint8_t* key )
 
 	do{
 		if(strcmp( here->name, key ) == 0){
-			// printf("FOUND!\n");
 			*TOS = (uint32_t)&(here->codefield);
 			*TOS_next = 1; // SET FLAG TO 1 (EXECUTE)
 			return;
@@ -54,7 +53,6 @@ void c_FIND( void* r_stk, struct word_header* here, uint8_t* key )
 		here = here->prev; // go to prev word in DICT
 	} while(here != NULL);
 
-	printf("NUM\n");
 	*TOS = (uint32_t)key;
 	*TOS_next = 0; // SET FLAG TO 0 (>NUM)
 	return;
