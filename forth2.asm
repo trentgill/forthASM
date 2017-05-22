@@ -177,15 +177,6 @@ HEADR 	COLON, ":"
 ;DICTIONARY- COMPILED WORDS
 
 ;redefine HEADR to include DOCOLON
-%macro 	HEADR 2
-	align 	16, db 0
-	h%1 	dd 	prev_h 		;previous invocation's header
-		%define prev_h 	h%1 	;redefine prev_h!
-		db 	%2		;max 12chars, unless change to align 32(wasteful)
-		align	16, db 0
-		%1: 	DOCOLON
-%endmacro
-
 %macro DOCOLON 0
 	mov 	[ebp], esi	;push fPC onto rtn stack
 	add 	ebp, 0x4	;"
@@ -195,6 +186,16 @@ HEADR 	COLON, ":"
 	NXT
 	align	16, db 0 	;force DWORD alignment
 %endmacro
+
+%macro 	HEADR 2
+	align 	16, db 0
+	h%1 	dd 	prev_h 		;previous invocation's header
+		%define prev_h 	h%1 	;redefine prev_h!
+		db 	%2		;max 12chars, unless change to align 32(wasteful)
+		align	16, db 0
+		%1: 	DOCOLON
+%endmacro
+
 
 HEADR 	INTERPRET, "INTERPRET"
 	dd 	ZERO, WERD, FIND
