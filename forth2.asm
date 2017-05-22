@@ -17,7 +17,7 @@ global	_start		;must be declared for linker (ld)
 %macro NXT 0
 	mov 	eax, [esi]	;save fPC in eax
 	add 	esi, 0x4 	;increment fPC
-	jmp 	[eax] 		;go to *fPC
+	jmp 	eax 		;go to fPC
 %endmacro
 
 
@@ -28,8 +28,7 @@ _start:				;tell linker the entry point
 	NXT    	;go!
 
 ;"code fragments"
-QUIT	dd 	xQUIT
-xQUIT:	mov 	ebp, RSTACK	;clear return stack
+QUIT:	mov 	ebp, RSTACK	;clear return stack
 	mov 	DWORD[in_str_os], 0 	;reset in_str offset
 	mov 	esi, ILOOP 	;set fPC to INTERPRET
 	NXT			;run INTERPRET
@@ -38,10 +37,11 @@ xQUIT:	mov 	ebp, RSTACK	;clear return stack
 PROGRAM dd 	QUIT
 ILOOP	dd 	INTERPRET, BRANCH, -0x8, BYE, EXIT
 
+
+;DICTIONARY- NATIVE WORDS
+
 ;arg1: internal name; arg2: string name for interpretter
 ;NB: the tags can be removed now as the calls can be direct
-;also: the final 'dd' indirection line can be RM after DOCOLON inlined
-
 %define prev_h	0
 %macro 	HEADR 2
 	align 	16, db 0
@@ -49,18 +49,10 @@ ILOOP	dd 	INTERPRET, BRANCH, -0x8, BYE, EXIT
 		%define prev_h 	h%1 	;redefine prev_h!
 		db 	%2		;max 12chars, unless change to align 32(wasteful)
 		align	16, db 0
-		%1 	dd 	x%1
-		x%1:
+		%1:
 %endmacro
 
-	;EXIT still needs to be a forth word
 
-	;DOCOLON as part of the header of a composite word
-	;to move DOCOLON into header requires DC to
-	;dereference into xt then move forward #bytes
-	;equal to size of DOCOLON instructions.
-
-;DICTIONARY- NATIVE WORDS
 HEADR 	FIVE, "5"
 	push 	0x5
 	NXT 		;threaded tail
@@ -130,7 +122,7 @@ HEADR 	FIND, "FIND"
 
 HEADR 	EXECUTE, "EXECUTE" 	;note eax req'd for DOCOLON to work
 	pop 	eax		;pop XT into eax
-	jmp	[eax]		;NON-IMMEDIATE
+	jmp	eax		;NON-IMMEDIATE
 
 HEADR 	TONUM, "TONUM"
 	;unimplemented!
@@ -191,16 +183,19 @@ HEADR 	COLON, ":"
 		%define prev_h 	h%1 	;redefine prev_h!
 		db 	%2		;max 12chars, unless change to align 32(wasteful)
 		align	16, db 0
-		%1 	dd 	DOCOLON
+		%1: 	DOCOLON
 %endmacro
 
-DOCOLON:mov 	[ebp], esi	;push fPC onto rtn stack
+%macro DOCOLON 0
+	mov 	[ebp], esi	;push fPC onto rtn stack
 	add 	ebp, 0x4	;"
 				;eax=prev fPC
-	mov 	esi, eax	;resolve last fPC into fPC
-	add 	esi, 0x4	;move 1 word forward
+	mov 	esi, eax	;last fPC into fPC
+	add 	esi, 0x20	;move 1 word forward
 	NXT
- 
+	align	16, db 0 	;force DWORD alignment
+%endmacro
+
 HEADR 	INTERPRET, "INTERPRET"
 	dd 	ZERO, WERD, FIND
 	dd 	QBRANCH, 0x14, EXECUTE, BRANCH, 0x8
@@ -208,8 +203,6 @@ HEADR 	INTERPRET, "INTERPRET"
 
 HEADR	SQUARED, "SQUARED"
 	dd	DUP, STAR, EXIT
-
-
 
 
 ; : SQUARED ( a -- a^2 ) DUP * ;
