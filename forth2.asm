@@ -12,30 +12,32 @@ global	_start		;must be declared for linker (ld)
 ; esi: 	forth program counter
 ; ebp: 	return stack pointer
 
+; research combined copy&increment instruction
+%macro NXT 0
+	mov 	eax, [esi]	;save fPC in eax
+	add 	esi, 0x4 	;increment fPC
+	jmp 	[eax] 		;go to *fPC
+%endmacro
+
 _start:				;tell linker the entry point
 	mov 	[SP0],esp 	;store stack pointer in SP0
 	mov	esi, PROGRAM	;set the fPC
 	mov 	ebp, RSTACK
-	jmp	NEXT    	;go!
+	NXT    	;go!
 
 ;"code fragments"
-NEXT:
-	mov 	eax, [esi]	;save fPC in eax
-	add 	esi, 0x4 	;increment fPC
-	jmp 	[eax] 		;go to *fPC
-
 QUIT	dd 	xQUIT
 xQUIT:	mov 	ebp, RSTACK	;clear return stack
 	mov 	DWORD[in_str_os], 0 	;reset in_str offset
 	mov 	esi, ILOOP 	;set fPC to INTERPRET
-	jmp 	NEXT		;run INTERPRET
+	NXT			;run INTERPRET
 
 DOCOLON:mov 	[ebp], esi	;push fPC onto rtn stack
 	add 	ebp, 0x4	;"
 				;eax=prev fPC
 	mov 	esi, eax	;resolve last fPC into fPC
 	add 	esi, 0x4	;move 1 word forward
-	jmp	NEXT
+	NXT
 
 
 ; esi needs to hold a reference re: the pointer name at left
@@ -57,15 +59,6 @@ LAST_H	dd 	0
 		x%1:
 %endmacro			
 
-; research combined copy&increment instruction
-%macro NXT 0
-	mov 	eax, [esi]	;save fPC in eax
-	add 	esi, 0x4 	;increment fPC
-	jmp 	[eax] 		;go to *fPC
-%endmacro
-
-	;NEXT could be added to each DICT word
-
 	;EXIT still needs to be a forth word
 
 	;DOCOLON as part of the header of a composite word
@@ -85,7 +78,7 @@ HEADR 	FIVE, "5"
 	; FIVE 	dd 	xFIVE
 	; xFIVE: 	
 		; push 	0x5
-		; jmp	NEXT
+		; NXT
 
 align	16, db 0
 hDOT	dd 	hFIVE
@@ -95,7 +88,7 @@ hDOT	dd 	hFIVE
 	xDOT:	push 	message
 		call 	printf
 		add 	esp, 8
-		jmp 	NEXT
+		NXT
 
 align 	16, db 0
 hDUP 	dd 	hDOT
@@ -103,7 +96,7 @@ hDUP 	dd 	hDOT
 	align	16, db 0
 	DUP 	dd 	xDUP
 	xDUP: 	push	DWORD [esp]
-		jmp	NEXT
+		NXT
 
 align 	16, db 0
 hSTAR	dd 	hDUP
@@ -114,7 +107,7 @@ hSTAR	dd 	hDUP
 		pop 	eax
 		imul 	ebx	;imul uses eax & stores in eax
 		push 	eax
-		jmp 	NEXT
+		NXT
 
 align 	16, db 0
 hEXIT 	dd 	hSTAR
@@ -123,7 +116,7 @@ hEXIT 	dd 	hSTAR
 	EXIT	dd 	xEXIT
 	xEXIT:	sub	ebp, 0x4
 		mov 	esi, [ebp]
-		jmp 	NEXT
+		NXT
 
 align 	16, db 0
 hINTERPRET dd 	hEXIT
@@ -146,10 +139,10 @@ hQBRANCH dd 	hINTERPRET
 		jne	Q_NOTZ		;GOTO !0 branch
 		;skip
 		add 	esi, [esi]	;move fPC forward by contents of fPC (QB's arg)
-		jmp 	NEXT
+		NXT
 		;IF = TRUE
 	Q_NOTZ:	add 	esi, 0x4 	;skip QB's arg
-		jmp 	NEXT
+		NXT
 
 align 	16, db 0
 hBRANCH dd 	hQBRANCH
@@ -158,7 +151,7 @@ hBRANCH dd 	hQBRANCH
 	BRANCH dd 	xBRANCH
 	xBRANCH:
 		add 	esi, [esi]	;move fPC forward by contents of fPC (B's arg)
-		jmp 	NEXT
+		NXT
 
 align 	16, db 0
 hZERO	dd 	hBRANCH
@@ -166,7 +159,7 @@ hZERO	dd 	hBRANCH
 	align 	16, db 0
 	ZERO 	dd 	xZERO
 	xZERO: 	push	0x20 		;push SPACE
-		jmp	NEXT
+		NXT
 
 align 	16, db 0
 hWERD	dd 	hZERO
@@ -180,7 +173,7 @@ hWERD	dd 	hZERO
 		add 	esp, 0x8 	;drop 2 vals
 		pop 	DWORD[in_str_os];update offset
 			; leaves *token(as string) on stack
-		jmp	NEXT
+		NXT
 		; passes test (for first word)
 		; drops top 2 vals on stack
 		; pushes count-of-used chars into in_str_os var
@@ -203,7 +196,7 @@ hFIND	dd 	hWERD
 		push 	DWORD[ebp]
 		sub 	ebp, 0x4
 		push 	DWORD[ebp]
-		jmp	NEXT
+		NXT
 
 align 	16, db 0
 hEXECUTE dd 	hFIND
@@ -220,7 +213,7 @@ hTONUM	dd 	hEXECUTE
 	align 	16, db 0
 	TONUM 	dd 	xTONUM
 	xTONUM: ;call 	atoi		;c lib func char->int
-		jmp	NEXT
+		NXT
 
 align 	16, db 0
 hBYE 	dd 	hTONUM
@@ -264,7 +257,7 @@ hDOTESS dd 	hBYE
 	DS_ENDR:push 	ds_end
 		call 	printf
 		add 	esp, 4
-		jmp 	NEXT
+		NXT
 
 align 	16, db 0
 hCOLON dd 	hDOTESS
