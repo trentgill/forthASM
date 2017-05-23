@@ -110,7 +110,7 @@ HEADR 	BRANCH, "BRANCH"
 	add 	esi, [esi]	;move fPC forward by contents of fPC (B's arg)
 	NEXT
 
-HEADR 	ZERO, "BL"
+HEADR 	BLANK, "BL"
  	push	0x20 		;push SPACE
 	NEXT
 
