@@ -213,10 +213,10 @@ ZLL: 	mov  	DWORD[esp], 1
 
 HEADR 	ZEROMORE, "0>" 	;true if n > 0
 	cmp 	DWORD[esp], 0 	;compare TOS to 0
-	jg 	ZLL
+	jg 	ZMM
 	mov 	DWORD[esp], 0
 	NEXT
-ZLL: 	mov  	DWORD[esp], 1
+ZMM: 	mov  	DWORD[esp], 1
 	NEXT
 
 HEADR 	DOTESS, ".S"
