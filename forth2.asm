@@ -197,7 +197,8 @@ DS_ENDR:push 	ds_end
 	NEXT
 
 HEADR 	COLON, ":"
-	;first allocate a new dictionary header
+	;skip leading space
+	;add new DICT entry (use %HEADR)
 	;set the 'COMPILE' flag so next iteration of
 	;QUIT loop sends following WORD into compile_word
 	;rather than INTERPRET
@@ -249,9 +250,6 @@ HEADR 	COMPILE, "COMPILE"
 ; THEN
 
 
-; ?DUP gives zero if a number is found
-
-
 HEADR	SQUARED, "SQUARED"
 	dd	DUP, STAR, EXIT
 
@@ -265,6 +263,7 @@ SP0 dd 0 		;pointer to bottom of stack
 RSTACK TIMES 0x10 dd 0x0;return stack init
 
 LATEST dd hSQUARED 	;pointer to header of last word added to dict
+COMPILE_FLAG dd 0 	;not compiling
 
 in_str db "5 SQUARED . BYE ;",0 ;fake shell input string
 in_str_os dd 0 		;save how many chars have been used
