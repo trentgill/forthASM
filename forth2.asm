@@ -1,3 +1,11 @@
+;system interupt dfns
+sys_exit 	equ 	1
+sys_read 	equ 	3
+sys_write 	equ	4
+stdin 		equ 	0
+stdout 		equ 	1
+stderr 		equ 	3
+
 section	.text
 
 extern 	printf			;include C printf function
@@ -31,17 +39,35 @@ _start:				;tell linker the entry point
 QUIT:	mov 	ebp, RSTACK	;clear return stack
 	mov 	DWORD[in_str_os], 0 	;reset in_str offset
 	mov 	esi, QLOOP 	;set fPC to QLOOP
+;terminal input!
+	mov 	ecx, promptMsg
+	mov 	edx, promptLen
+	call 	DisplayText
+
+	mov 	ecx, in_str
+	mov 	edx, in_str_len
+	call 	ReadText
+	push 	eax
+
+	mov 	ecx, respMsg
+	mov 	edx, respLen
+	call 	DisplayText
+
+	pop 	edx
+	mov 	ecx, in_str
+	call 	DisplayText
 	NEXT			;run QLOOP
 
-; [quit]
-; RP0 RP!
-; BEGIN
-; 	STATE @IF
-; 		compile_word
-; 	ELSE
-; 		interpret_word
-; 	THEN
-; AGAIN
+DisplayText:
+	mov 	eax, sys_write
+	mov 	ebx, stdout
+	int 	0x80
+	ret
+ReadText:
+	mov 	ebx, stdin
+	mov 	eax, sys_read
+	int 	0x80
+	ret
 
 PROGRAM dd 	QUIT
 
@@ -298,7 +324,8 @@ RSTACK TIMES 0x10 dd 0x0;return stack init
 LATEST dd hSQUARED 	;pointer to header of last word added to dict
 COMPILE_FLAG dd 0 	;not compiling
 
-in_str db "5 SQUARED . BYE ;",0 ;fake shell input string
+; in_str 	TIMES 0x50 db 0 ;80*zero chars
+; in_str db "6 SQUARED . BYE ;",0 ;fake shell input string
 in_str_os dd 0 		;save how many chars have been used
 word_str TIMES 0x10 db 0
 
@@ -309,3 +336,16 @@ debugDD db 'asm_dd: 0x%x',0xA,0x0
 ds_sz 	db  '<0x%x> ',0x0 		;no new line!
 ds_num 	db  '0x%x ',0x0 		;print a hex num
 ds_end 	db  'nice stack ;)',0xA,0x0 	;close printf statement
+
+promptMsg db 'fawth: '
+promptLen equ $-promptMsg
+
+respMsg	db 'you typed: ',0
+respLen equ $-respMsg
+
+section .bss
+
+in_str 	resb 	0x50	;80char limit
+in_str_len equ $-in_str
+
+
