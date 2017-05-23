@@ -72,6 +72,10 @@ HEADR 	DUP, "DUP"
  	push	DWORD [esp]
 	NEXT
 
+HEADR 	STATE, "STATE" 		;push @compile_flag on stack
+	push 	COMPILE_FLAG
+	NEXT
+
 HEADR 	STAR, "*"
 	pop 	ebx
 	pop 	eax
