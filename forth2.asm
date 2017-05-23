@@ -30,8 +30,8 @@ _start:				;tell linker the entry point
 ;"code fragments"
 QUIT:	mov 	ebp, RSTACK	;clear return stack
 	mov 	DWORD[in_str_os], 0 	;reset in_str offset
-	mov 	esi, ILOOP 	;set fPC to INTERPRET
-	NEXT			;run INTERPRET
+	mov 	esi, QLOOP 	;set fPC to QLOOP
+	NEXT			;run QLOOP
 
 ; [quit]
 ; RP0 RP!
@@ -44,8 +44,11 @@ QUIT:	mov 	ebp, RSTACK	;clear return stack
 ; AGAIN
 
 PROGRAM dd 	QUIT
-ILOOP	dd 	INTERPRET, BRANCH, -0x8, BYE, EXIT
 
+QLOOP	dd 	STATE, DEREF
+	dd 		QBRANCH, 0x10, COMPILE_WORD
+	dd 		BRANCH, 0x08, INTERPRET_WORD
+	dd 	BRANCH, -0x24
 
 ;DICTIONARY- NATIVE WORDS
 
@@ -60,7 +63,6 @@ ILOOP	dd 	INTERPRET, BRANCH, -0x8, BYE, EXIT
 		align	16, db 0
 		%1:
 %endmacro
-
 
 HEADR 	DOT, "."
 	push 	message
@@ -240,12 +242,12 @@ HEADR 	COLON, ":"
 %endmacro
 
 
-HEADR 	INTERPRET, "INTERPRET"
+HEADR 	INTERPRET_WORD, "INTERPRET"
 	dd 	ZERO, WERD, FIND
 	dd 	QBRANCH, 0x10, EXECUTE, BRANCH, 0x8
 	dd 	TONUM, EXIT
 
-HEADR 	COMPILE, "COMPILE"
+HEADR 	COMPILE_WORD, "COMPILE"
 	dd 	ZERO, WERD, FIND
 	dd 	QDUP, QBRANCH, 0x20, 
 ; [compile_word]
