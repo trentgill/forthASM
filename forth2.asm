@@ -324,12 +324,12 @@ in_str_os dd 0 		;save how many chars have been used
 word_str TIMES 0x10 db 0
 in_done dd 1
 
-message	db  'numbness: 0x%x', 0xA, 0x0
+message	db  'numbness: %d', 0xA, 0x0
 debugP 	db 'asm_p: %p',0xA,0x0
 debugDD db 'asm_dd: 0x%x',0xA,0x0
 
 ds_sz 	db  '<0x%x> ',0x0 		;no new line!
-ds_num 	db  '0x%x ',0x0 		;print a hex num
+ds_num 	db  '%d ',0x0 		;print a hex num
 ds_end 	db  'nice stack ;)',0xA,0x0 	;close printf statement
 
 promptMsg db 'fawth: '
