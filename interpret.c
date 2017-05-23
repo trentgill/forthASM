@@ -14,10 +14,10 @@ void c_WORD( uint8_t* out, uint8_t* in, uint32_t in_offset, uint32_t delim )
 	uint8_t* out_ptr = out; // save ptr to return token
 	
 	in += in_offset; // shift in_ptr to next word
-	// printf("WORD: %s\n", in);
 	uint32_t count = in_offset;
 	
-	while(*in != 0 && *in != delim){
+	// check for null, delim (space), and linefeed
+	while(*in != 0 && *in != delim && *in != 0xA){
 		// push in char to out
 		*out++ = *in++;
 		count++; // used another char

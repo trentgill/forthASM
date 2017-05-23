@@ -39,23 +39,14 @@ _start:				;tell linker the entry point
 QUIT:	mov 	ebp, RSTACK	;clear return stack
 	mov 	DWORD[in_str_os], 0 	;reset in_str offset
 	mov 	esi, QLOOP 	;set fPC to QLOOP
-;terminal input!
-	mov 	ecx, promptMsg
+
+	mov 	ecx, promptMsg 	;terminal prompt!
 	mov 	edx, promptLen
 	call 	DisplayText
 
-	mov 	ecx, in_str
+	mov 	ecx, in_str 	;terminal input.
 	mov 	edx, in_str_len
 	call 	ReadText
-	push 	eax
-
-	mov 	ecx, respMsg
-	mov 	edx, respLen
-	call 	DisplayText
-
-	pop 	edx
-	mov 	ecx, in_str
-	call 	DisplayText
 	NEXT			;run QLOOP
 
 DisplayText:
@@ -190,6 +181,10 @@ NEND:	push 	eax 		;push result
 
 HEADR 	ABORT, "ABORT"
 	;print error message
+	mov 	ecx, abortMsg
+	mov 	edx, abortLen
+	call 	DisplayText
+
 	jmp 	QUIT 		;return to top-level
 
 HEADR 	QDUP, "?DUP" 		;DUP stack if non-zero
@@ -302,25 +297,11 @@ HEADR 	COMPILE_WORD, "COMPILE_W"
 	dd 		COMPILE
 	dd 	EXIT
 
-; [compile_word]
-; BL WORD FIND
-; ?DUP IF
-;	<0 IF
-;		EXECUTE
-; 	ELSE
-;		COMPILE
-; 	THEN
-; THEN
-
-
 HEADR	SQUARED, "SQUARED"
 	dd	DUP, STAR, EXIT
 
 
-; : SQUARED ( a -- a^2 ) DUP * ;
-
 section	.data
-
 
 SP0 dd 0 		;pointer to bottom of stack
 RSTACK TIMES 0x10 dd 0x0;return stack init
@@ -328,13 +309,11 @@ RSTACK TIMES 0x10 dd 0x0;return stack init
 LATEST dd hSQUARED 	;pointer to header of last word added to dict
 COMPILE_FLAG dd 0 	;not compiling
 
-; in_str 	TIMES 0x50 db 0 ;80*zero chars
-; in_str db "6 SQUARED . BYE ;",0 ;fake shell input string
 in_str_os dd 0 		;save how many chars have been used
 word_str TIMES 0x10 db 0
 
-message	db  'the number: 0x%x', 0xA, 0x0
-debugP db 'asm_p: %p',0xA,0x0
+message	db  'numbness: 0x%x', 0xA, 0x0
+debugP 	db 'asm_p: %p',0xA,0x0
 debugDD db 'asm_dd: 0x%x',0xA,0x0
 
 ds_sz 	db  '<0x%x> ',0x0 		;no new line!
@@ -344,8 +323,8 @@ ds_end 	db  'nice stack ;)',0xA,0x0 	;close printf statement
 promptMsg db 'fawth: '
 promptLen equ $-promptMsg
 
-respMsg	db 'you typed: ',0
-respLen equ $-respMsg
+abortMsg db 'no can do.',0xA,0
+abortLen equ $-abortMsg
 
 section .bss
 
