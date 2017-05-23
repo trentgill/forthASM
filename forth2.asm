@@ -177,6 +177,22 @@ HEADR 	BYE, "BYE"
 	pop 	ebx
 	int 	0x80
 
+HEADR 	ZEROLESS, "0<" 	;true if n < 0
+	cmp 	DWORD[esp], 0 	;compare TOS to 0
+	jl 	ZLL
+	mov 	DWORD[esp], 0
+	NEXT
+ZLL: 	mov  	DWORD[esp], 1
+	NEXT
+
+HEADR 	ZEROMORE, "0>" 	;true if n > 0
+	cmp 	DWORD[esp], 0 	;compare TOS to 0
+	jg 	ZLL
+	mov 	DWORD[esp], 0
+	NEXT
+ZLL: 	mov  	DWORD[esp], 1
+	NEXT
+
 HEADR 	DOTESS, ".S"
 	mov 	ebx, [SP0]
 	sub 	ebx, esp
@@ -208,6 +224,7 @@ DS_ENDR:push 	ds_end
 	NEXT
 
 HEADR 	COLON, ":"
+	mov 	COMPILE_FLAG, 1 ;compile mode!
 	;skip leading space
 	;add new DICT entry (use %HEADR)
 	;set the 'COMPILE' flag so next iteration of
