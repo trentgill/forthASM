@@ -12,7 +12,8 @@ struct word_header{
 void c_WORD( uint8_t* out, uint8_t* in, uint32_t in_offset, uint32_t delim )
 {
 	uint8_t* out_ptr = out; // save ptr to return token
-	
+	uint32_t* word_fin = (uint32_t*)&in;
+
 	in += in_offset; // shift in_ptr to next word
 	uint32_t count = in_offset;
 	
@@ -22,6 +23,8 @@ void c_WORD( uint8_t* out, uint8_t* in, uint32_t in_offset, uint32_t delim )
 		*out++ = *in++;
 		count++; // used another char
 	}
+	// set 'done w string' flag if 0xA
+	if(*in == 0xA) { *word_fin = 1;} else { *word_fin = 0;}
 	*out = 0; // add null char to return str
 	count++; // skip next space
 		// need to protect against /0 end of string?

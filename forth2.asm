@@ -47,6 +47,8 @@ QUIT:	mov 	ebp, RSTACK	;clear return stack
 	mov 	ecx, in_str 	;terminal input.
 	mov 	edx, in_str_len
 	call 	ReadText
+
+	mov 	DWORD[in_done], 0 ;set flag to read term
 	NEXT			;run QLOOP
 
 DisplayText:
@@ -62,10 +64,11 @@ ReadText:
 
 PROGRAM dd 	QUIT
 
-QLOOP	dd 	STATE, DEREF
+QLOOP	dd 	LINEFEED, QBRANCH, 0x8, DONE
+	dd 	STATE, DEREF
 	dd 		QBRANCH, 0x10, COMPILE_WORD
 	dd 		BRANCH, 0x08, INTERPRET_WORD
-	dd 	BRANCH, -0x24
+	dd 	BRANCH, -0x34
 
 ;DICTIONARY- NATIVE WORDS
 
@@ -80,6 +83,10 @@ QLOOP	dd 	STATE, DEREF
 		align	16, db 0
 		%1:
 %endmacro
+
+HEADR 	LINEFEED, "LINEFEED"
+	push 	DWORD[in_done]
+	NEXT
 
 HEADR 	DOT, "."
 	push 	message
@@ -106,6 +113,9 @@ HEADR 	STAR, "*"
 	imul 	ebx	;imul uses eax & stores in eax
 	push 	eax
 	NEXT
+
+HEADR 	DONE, "DONE"
+	jmp 	QUIT
 
 HEADR 	EXIT, "EXIT"
 	sub	ebp, 0x4
@@ -136,7 +146,8 @@ HEADR 	WERD, "WORD"
 	push 	in_str 		;address of input string
 	push 	word_str	;address of output return str
 	call 	c_WORD 		;ret length of WORD
-	add 	esp, 0x8 	;drop 2 vals
+	add 	esp, 0x4 	;drop 1 val
+	pop 	DWORD[in_done]	;save 'done' flag
 	pop 	DWORD[in_str_os];update offset
 		; leaves *token(as string) on stack
 	NEXT
@@ -311,6 +322,7 @@ COMPILE_FLAG dd 0 	;not compiling
 
 in_str_os dd 0 		;save how many chars have been used
 word_str TIMES 0x10 db 0
+in_done dd 1
 
 message	db  'numbness: 0x%x', 0xA, 0x0
 debugP 	db 'asm_p: %p',0xA,0x0
