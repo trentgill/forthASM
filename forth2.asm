@@ -76,6 +76,11 @@ HEADR 	STATE, "STATE" 		;push @compile_flag on stack
 	push 	COMPILE_FLAG
 	NEXT
 
+HEADR 	DEREF, "@"
+	pop 	eax
+	push 	DWORD[eax]
+	NEXT
+
 HEADR 	STAR, "*"
 	pop 	ebx
 	pop 	eax
