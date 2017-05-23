@@ -249,8 +249,12 @@ DS_ENDR:push 	ds_end
 	add 	esp, 4
 	NEXT
 
+HEADR 	COMPILE, "COMPILE"
+	;
+	NEXT
+
 HEADR 	COLON, ":"
-	mov 	COMPILE_FLAG, 1 ;compile mode!
+	mov 	DWORD[COMPILE_FLAG], 1 ;compile mode!
 	;skip leading space
 	;add new DICT entry (use %HEADR)
 	;set the 'COMPILE' flag so next iteration of
