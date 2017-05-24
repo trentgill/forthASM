@@ -386,7 +386,7 @@ HEADR 	SEMIC, ";", 1
 	dd 	RITEBRAK, DOLIT, EXIT, COMMA
 	dd 	EXIT
 
-HEADR 	PAREN, "(", 1 ;parse until close paren
+HEADR 	PAREN, "(", 1 ;parse until close paren (shld be TONUM not DOLIT?)
 	dd 	DOLIT, ')', WERD, EXIT
 
 HEADR 	INTERPRET_WORD, "INTERPRET", 1
