@@ -76,54 +76,62 @@ QLOOP	dd 	LINEFEED, QBRANCH, 0x8, DONE
 ;arg1: internal name; arg2: string name for interpretter
 ;NB: the tags can be removed now as the calls can be direct
 %define prev_h	0
-%macro 	HEADR 2
+%macro 	HEADR 3
 	align 	16, db 0
 	h%1 	dd 	prev_h 		;previous invocation's header
 		%define prev_h 	h%1 	;redefine prev_h!
-		db 	%2		;max 12chars, unless change to align 32(wasteful)
+		db 	%3		;immediate flag
+		db 	%2		;max 11chars
 		align	16, db 0
 		%1:
 %endmacro
 
-HEADR 	LINEFEED, "LINEFEED"
+HEADR 	LINEFEED, "LINEFEED", -1
 	push 	DWORD[in_done]
 	NEXT
 
-HEADR 	DOT, "."
+HEADR 	DOT, ".", -1
 	push 	message
 	call 	printf
 	add 	esp, 8
 	NEXT
 
-HEADR 	DUP, "DUP"
+HEADR 	DUP, "DUP", -1
  	push	DWORD [esp]
 	NEXT
 
-HEADR 	STATE, "STATE" 		;push @compile_flag on stack
+HEADR 	STATE, "STATE", -1 	;push @compile_flag on stack
 	push 	COMPILE_FLAG
 	NEXT
 
-HEADR 	DEREF, "@"
+HEADR 	DEREF, "@", -1
 	pop 	eax
 	push 	DWORD[eax]
 	NEXT
 
-HEADR 	STAR, "*"
+HEADR 	STAR, "*", -1
 	pop 	ebx
 	pop 	eax
 	imul 	ebx	;imul uses eax & stores in eax
 	push 	eax
 	NEXT
 
-HEADR 	DONE, "DONE"
+HEADR 	PLUS, "+", -1
+	pop 	ebx
+	pop 	eax
+	add 	eax, ebx
+	push 	eax
+	NEXT
+
+HEADR 	DONE, "DONE", -1
 	jmp 	QUIT
 
-HEADR 	EXIT, "EXIT"
+HEADR 	EXIT, "EXIT", -1
 	sub	ebp, 0x4
 	mov 	esi, [ebp]
 	NEXT
 
-HEADR 	QBRANCH, "?BRANCH"
+HEADR 	QBRANCH, "?BRANCH", -1
 	pop 	eax
 	cmp	eax,0 		;is TOS = 0?
 	jne	Q_NOTZ		;GOTO !0 branch
@@ -134,15 +142,15 @@ HEADR 	QBRANCH, "?BRANCH"
 Q_NOTZ:	add 	esi, 0x4 	;skip QB's arg
 	NEXT
 
-HEADR 	BRANCH, "BRANCH"
+HEADR 	BRANCH, "BRANCH", -1
 	add 	esi, [esi]	;move fPC forward by contents of fPC (B's arg)
 	NEXT
 
-HEADR 	BLANK, "BL"
+HEADR 	BLANK, "BL", -1
  	push	0x20 		;push SPACE
 	NEXT
 
-HEADR 	WERD, "WORD"
+HEADR 	WERD, "WORD", -1
 	push	DWORD[in_str_os];string offset (already read)
 	push 	in_str 		;address of input string
 	push 	word_str	;address of output return str
@@ -153,7 +161,7 @@ HEADR 	WERD, "WORD"
 		; leaves *token(as string) on stack
 	NEXT
 
-HEADR 	FIND, "FIND"
+HEADR 	FIND, "FIND", -1
 	push 	LATEST	;push &h_of_last_word_in_dict
 	add 	ebp, 0x4;add 1 extra space on rtn_stk
 	push 	ebp	;push &returnstack
@@ -165,11 +173,11 @@ HEADR 	FIND, "FIND"
 	NEXT
 
 
-HEADR 	EXECUTE, "EXECUTE" 	;note eax req'd for DOCOLON to work
+HEADR 	EXECUTE, "EXECUTE", -1 	;note eax req'd for DOCOLON to work
 	pop 	eax		;pop XT into eax
 	jmp	eax		;NON-IMMEDIATE
 
-HEADR 	TONUM, "TONUM"
+HEADR 	TONUM, "TONUM", -1
 	pop	ecx		;pop *string off stack
 	mov 	eax, 0 		;clear eax (store output val)
 
