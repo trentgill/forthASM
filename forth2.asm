@@ -23,8 +23,9 @@ global	_start		;must be declared for linker (ld)
 
 ; research combined copy&increment instruction
 %macro NEXT 0
-	mov 	eax, [esi]	;save fPC in eax
-	add 	esi, 0x4 	;increment fPC
+	; mov 	eax, [esi]	;save fPC in eax
+	; add 	esi, 0x4 	;increment fPC
+	lodsd 	;functionally equiv to above 2lins
 	jmp 	eax 		;go to fPC
 %endmacro
 
