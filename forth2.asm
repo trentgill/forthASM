@@ -407,20 +407,21 @@ section	.data
 SP0 dd 0 		;pointer to bottom of stack
 RSTACK TIMES 0x10 dd 0x0;return stack init
 
-LATEST dd hSQUARED 	;pointer to header of last word added to dict
+LATEST 	dd hSQUARED 	;pointer to header of last word added to dict
+dcLocn 	dd hSQUARED	;another *header for DOCOLON cpy
 COMPILE_FLAG dd 0 	;not compiling
 
 in_str_os dd 0 		;save how many chars have been used
 word_str TIMES 0x10 db 0
 in_done dd 1
 
-message	db  'numbness: %d', 0xA, 0x0
+message	db  'pancake: %d', 0xA, 0x0
 debugP 	db 'asm_p: %p',0xA,0x0
 debugDD db 'asm_dd: 0x%x',0xA,0x0
 
 ds_sz 	db  '<0x%x> ',0x0 		;no new line!
 ds_num 	db  '%d ',0x0 		;print a hex num
-ds_end 	db  'nice stack ;)',0xA,0x0 	;close printf statement
+ds_end 	db  'nice stack :/',0xA,0x0 	;close printf statement
 
 promptMsg db 'fawth: '
 promptLen equ $-promptMsg
