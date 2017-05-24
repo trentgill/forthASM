@@ -5,7 +5,8 @@
 
 struct word_header{
 	struct word_header* prev;
-	uint8_t name[12];
+	int8_t immediate;
+	uint8_t name[11];
 	uint32_t* codefield; // should be void* really :s
 };
 
