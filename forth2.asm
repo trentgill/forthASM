@@ -402,6 +402,21 @@ HEADR 	COMPILE_WORD, "COMPILE", 1
 	dd 			COMMA
 	dd 	EXIT
 
+HEADR 	TICK, "'", -1
+	dd 	BLANK, WERD, FIND, DROP, EXIT
+
+HEADR 	FIF, "IF", 1
+	dd 	;
+	dd 	EXIT
+
+HEADR 	FELSE, "ELSE", 1
+	dd 	;
+	dd 	EXIT
+
+HEADR 	FTHEN, "THEN", 1
+	dd 	;
+	dd 	EXIT
+
 HEADR	SQUARED, "SQUARED", -1
 	dd	DUP, STAR, EXIT
 
