@@ -402,16 +402,16 @@ HEADR 	COMPILE_WORD, "COMPILE", 1
 	dd 			COMMA
 	dd 	EXIT
 
-HEADR 	TICK, "'", -1
+HEADR 	TICK, "'", -1 	; takes string from term-input not stack?!
 	dd 	BLANK, WERD, FIND, DROP, EXIT
 
 HEADR 	FIF, "IF", 1
-	dd 	;
-	dd 	EXIT
+	dd 	DOLIT, QBRANCH, COMMA
+	dd 	POSTPONE, EXIT
 
 HEADR 	FELSE, "ELSE", 1
-	dd 	;
-	dd 	EXIT
+	dd 	DOLIT, BRANCH, COMMA
+	dd 	POSTPONE, EXIT
 
 HEADR 	FTHEN, "THEN", 1
 	dd 	;
