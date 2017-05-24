@@ -199,26 +199,34 @@ NIN:	mov 	ebx, [ecx]	;dereference char into ebx
 NEND:	push 	eax 		;push result
 	NEXT
 
-HEADR 	ABORT, "ABORT"
+HEADR 	ABORT, "ABORT", 1 	;immediacy doesn't matter?
 	;print error message
 	mov 	ecx, abortMsg
 	mov 	edx, abortLen
 	call 	DisplayText
-
 	jmp 	QUIT 		;return to top-level
 
-HEADR 	QDUP, "?DUP" 		;DUP stack if non-zero
-	cmp 	DWORD [esp], 0 	;is zero?
-	je 	QDNO		;skip DUP if zero
- 	push	DWORD [esp] 	;duplicate TOS!
-QDNO:	NEXT
 
-HEADR 	BYE, "BYE"
+HEADR 	QDUP, "?DUP", -1 	;DUP stack if non-zero
+	pop 	eax
+	cmp 	eax, 0
+	je 	QDUPPY
+	push 	eax
+QDUPPY: push 	eax
+	NEXT
+
+	; cmp 	DWORD [esp], 0 	;is zero?
+	; je 	QDNO		;skip DUP if zero
+ 	; push	DWORD [esp] 	;duplicate TOS!
+; QDNO:	NEXT
+
+HEADR 	BYE, "BYE", -1
 	mov	eax,1
-	pop 	ebx
+	pop 	ebx 	;TOS = exit code for term
 	int 	0x80
 
-HEADR 	ZEROLESS, "0<" 	;true if n < 0
+; use esp hack
+HEADR 	ZEROLESS, "0<", -1 	;true if n < 0
 	cmp 	DWORD[esp], 0 	;compare TOS to 0
 	jl 	ZLL
 	mov 	DWORD[esp], 0
@@ -226,15 +234,17 @@ HEADR 	ZEROLESS, "0<" 	;true if n < 0
 ZLL: 	mov  	DWORD[esp], 1
 	NEXT
 
-HEADR 	ZEROMORE, "0>" 	;true if n > 0
-	cmp 	DWORD[esp], 0 	;compare TOS to 0
-	jg 	ZMM
-	mov 	DWORD[esp], 0
+; push & pop
+HEADR 	ZEROMORE, "0>", -1 	;true if n > 0
+	pop 	eax
+	cmp 	eax, 0
+	jg 	ZMO
+	push 	0
 	NEXT
-ZMM: 	mov  	DWORD[esp], 1
+ZMO: 	push 	1
 	NEXT
 
-HEADR 	DOTESS, ".S"
+HEADR 	DOTESS, ".S", -1
 	mov 	ebx, [SP0]
 	sub 	ebx, esp
 	mov 	ecx, ebx
