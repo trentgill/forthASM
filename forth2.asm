@@ -350,6 +350,10 @@ HEADR 	RITEBRAK, "]", 1
 	mov 	DWORD[COMPILE_FLAG], 0
 	NEXT
 
+HEADR 	DROP, "DROP", -1
+	add 	esp, 4		;drop a value on stack
+	NEXT
+
 
 
 ; ": DBL ( n -- n+n ) DUP + ;"
