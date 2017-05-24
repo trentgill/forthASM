@@ -362,35 +362,43 @@ HEADR 	RITEBRAK, "]", 1
 	add 	ebp, 0x4	;"
 				;eax=prev fPC
 	mov 	esi, eax	;last fPC into fPC
-	add 	esi, 0x20	;move DOCOLON + NEXT words forward
+	add 	esi, 0x10	;move DOCOLON + NEXT words forward
 	NEXT
-	align	16, db 0 	;force DWORD alignment
+	db 0,0 			;padding to DWORD boundary
 %endmacro
 
-%macro 	HEADR 2
+%macro 	HEADR 3
 	align 	16, db 0
 	h%1 	dd 	prev_h 		;previous invocation's header
 		%define prev_h 	h%1 	;redefine prev_h!
-		db 	%2		;max 12chars
+		db 	%3 		;immediacy
+		db 	%2		;max 11chars
 		align	16, db 0
 		%1: 	DOCOLON
 %endmacro
 
 
-HEADR 	INTERPRET_WORD, "INTERPRET_W"
+HEADR 	SEMIC, ";", 1
+	dd 	RITEBRAK, DOLIT, EXIT, COMMA
+	dd 	EXIT
+
+HEADR 	PAREN, "(", 1 ;parse until close paren
+	dd 	DOLIT, ')', WERD, EXIT
+
+HEADR 	INTERPRET_WORD, "INTERPRET", 1
 	dd 	BLANK, WERD, FIND
 	dd 	QBRANCH, 0x10, EXECUTE, BRANCH, 0x8
 	dd 	TONUM, EXIT
 
-HEADR 	COMPILE_WORD, "COMPILE_W"
+HEADR 	COMPILE_WORD, "COMPILE", 1
 	dd 	BLANK, WERD, FIND
 	dd 	QDUP, QBRANCH, 0x20
 	dd 		ZEROMORE, QBRANCH, 0x10
-	dd 		EXECUTE, BRANCH, 0x08
-	dd 		COMPILE
+	dd 			EXECUTE, BRANCH, 0x08
+	dd 			COMMA
 	dd 	EXIT
 
-HEADR	SQUARED, "SQUARED"
+HEADR	SQUARED, "SQUARED", -1
 	dd	DUP, STAR, EXIT
 
 
