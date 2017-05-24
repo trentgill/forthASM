@@ -29,7 +29,6 @@ void c_WORD( uint8_t* out, uint8_t* in, uint32_t in_offset, uint32_t delim )
 	*out = 0; // add null char to return str
 	count++; // skip next space
 		// need to protect against /0 end of string?
-
 	uint32_t* out_offset = &in_offset;
 	uint8_t** out_str = (uint8_t **)&delim; // pointer to str (which is *char)
 
@@ -46,12 +45,13 @@ void c_FIND( void* r_stk, struct word_header* here, uint8_t* key )
 	uint32_t* flag = (uint32_t *)&token - 0x4; // 1 address higher on stack
 
 	uint32_t* TOS = (uint32_t *)r_stk;
-	uint32_t* TOS_next = (uint32_t *)r_stk - 0x1; // C KNOWS THAT IT'S A 32BIT ADDRESS!
+	int32_t* TOS_next = (int32_t *)r_stk - 0x1; // C KNOWS THAT IT'S A 32BIT ADDRESS!
 
 	do{
 		if(strcmp( here->name, key ) == 0){
 			*TOS = (uint32_t)&(here->codefield);
-			*TOS_next = 1; // SET FLAG TO 1 (EXECUTE)
+			int32_t immo = (int32_t)here->immediate;
+			*TOS_next = immo;
 			return;
 		}
 		here = here->prev; // go to prev word in DICT
