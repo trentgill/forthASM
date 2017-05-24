@@ -274,22 +274,85 @@ DS_ENDR:push 	ds_end
 	add 	esp, 4
 	NEXT
 
-HEADR 	COMPILE, "COMPILE"
-	;
+HEADR 	COMMA, ",", -1 	;i think
+		; infers "," can be compiled to dict ->
+		; hence words can themselves extend the dict!
+	; append TOS to dictionary word
+	mov 	eax, [dictP] 	;*dict into eax
+	pop 	DWORD[eax] 	;append TOS to &dict
+	add 	eax, 4 		;shift dict ref forward
+	mov 	DWORD[dictP], eax ;save new address
 	NEXT
 
-HEADR 	COLON, ":"
+HEADR 	COLON, ":", -1
+;dd BLANK
+	push	0x20
+;dd WERD
+	push	DWORD[in_str_os];string offset (already read)
+	push 	in_str 		;address of input string
+	push 	word_str	;address of output return str
+	call 	c_WORD 		;ret length of WORD
+	add 	esp, 0x4 	;drop 1 val
+	pop 	DWORD[in_done]	;save 'done' flag
+	pop 	DWORD[in_str_os];update offset
+;end WORD, push *LL to dict
+
+	mov 	edx, [dictP] 	;*dict memory
+	mov 	ebx, [LATEST]	;*last_word to ebx
+	mov 	DWORD[dcLocn],ebx ;reset *header
+	mov 	DWORD[edx], ebx ;*last_word into dict
+	mov 	[LATEST], edx 	;save *this_word for next
+	add 	edx, 4 		;point to text destination
+	mov 	DWORD[edx], -1 	;NON-IMMEDIATE
+	add 	edx, 1
+;cp 12 bytes to dict (as 3 DWORDs)
+; eax=&name, ebx=counter, ecx=*name, edx=&dict
+	pop 	eax		;*name from WORD
+	mov 	ebx, 0x3 	;set counter to 3
+CHACHA:	mov 	ecx, DWORD[eax]	;deref *name into ecx
+	mov 	DWORD[edx], ecx ;copy 4*char
+	add 	edx, 4 		;next 4*char (dest)
+	add 	eax, 4 		;next 4*char (src)
+	sub 	ebx, 1 		;decrease counter
+	cmp 	ebx, 0 		;sub probably auto-cmps?
+	jne 	CHACHA 		;do 12 bytes
+	sub 	edx, 1 	;compensate for only 11byte name
+;nb: CHACHA copies 12 chars regardless of string length
+	; this leaves junk chars in the dict, but bc the word
+	; is zero-terminated, anything after \0 is ignored!
+;dd LEFTBRAK
 	mov 	DWORD[COMPILE_FLAG], 1 ;compile mode!
-	;skip leading space
-	;add new DICT entry (use %HEADR)
-	;set the 'COMPILE' flag so next iteration of
-	;QUIT loop sends following WORD into compile_word
-	;rather than INTERPRET
+;cp DOCOLON
+	mov 	eax, [dcLocn] 	;save *header to eax
+	add 	eax, 16 	;&DOCOLON
+	mov 	ebx, 0x4 	;set counter to 4
+TANGO:	mov 	ecx, DWORD[eax]	;*DOCOLON in ecx
+	mov 	DWORD[edx], ecx ;copy DWORD
+	add 	edx, 4 		;next 4*char (dest)
+	add 	eax, 4 		;next 4*char (src)
+	sub 	ebx, 1 		;decrease counter
+	cmp 	ebx, 0
+	jne 	TANGO 		;do 16 bytes
+;update dictionary pointer
+	mov 	DWORD[dictP],edx ;save end of word
 	NEXT
-	;should this be in a register so it's quick access
-	;as the flag is checked when parsing any word
-	;?is this a high-volume use case?
 
+HEADR 	DOLIT, "DOLIT", -1
+	push 	DWORD[esi] 	;push next instruction to stack
+	add 	esi, 0x4 	;skip DOLIT's arg
+	NEXT
+
+HEADR 	LEFTBRAK, "[", 1
+	mov 	DWORD[COMPILE_FLAG], 1
+	NEXT
+
+HEADR 	RITEBRAK, "]", 1
+	mov 	DWORD[COMPILE_FLAG], 0
+	NEXT
+
+
+
+; ": DBL ( n -- n+n ) DUP + ;"
 
 ;DICTIONARY- COMPILED WORDS
 
