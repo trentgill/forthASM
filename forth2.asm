@@ -429,9 +429,11 @@ promptLen equ $-promptMsg
 abortMsg db 'no can do.',0xA,0
 abortLen equ $-abortMsg
 
+dictP	dd dictNew 	;location of dictionary
+
 section .bss
 
 in_str 	resb 	0x50	;80char limit
 in_str_len equ $-in_str
 
-
+dictNew resd	0xFFFF	;64k reserved for dict additions
