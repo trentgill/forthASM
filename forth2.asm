@@ -354,6 +354,26 @@ HEADR 	DROP, "DROP", -1
 	add 	esp, 4		;drop a value on stack
 	NEXT
 
+HEADR 	POSTPONE, "POSTPONE", -1
+	mov 	edx, DWORD[dictP];*current dict into edx
+	push 	edx 		;*current-dict onto data stack
+	add 	edx, 4 		;move *dict forward
+	mov 	DWORD[dictP], edx;save *dict 
+	NEXT
+
+HEADR 	FTHEN, "THEN", 1
+	pop 	ebx		;*if/else arg
+	mov 	eax, DWORD[dictP];*dict-current
+	sub 	eax, ebx	;distance to jump to here
+	mov 	DWORD[ebx], eax ;save distance into if/else arg
+	NEXT
+
+HEADR 	SWAP, "SWAP", -1
+	pop 	ebx
+	pop 	eax
+	push 	ebx
+	push 	eax
+	NEXT
 
 
 ; ": DBL ( n -- n+n ) DUP + ;"
